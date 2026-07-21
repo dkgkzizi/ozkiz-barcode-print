@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OH!Barcode</title>
+    <title>OH! Barcode</title>
     <style>
       :root{
         --ozkiz-orange:#7c3aed;
@@ -30,7 +30,8 @@
         flex-shrink:0;
       }
       .brand-text{flex:1; min-width:180px;}
-      .brand-text h1{ font-size:22px; margin:0; color:var(--ozkiz-orange-dark); letter-spacing:-0.5px; }
+      .brand-text h1{ font-size:22px; margin:0; color:#111; letter-spacing:-0.5px; }
+      .brand-text h1 .brand-mark{ color:#e0102a; }
       .brand-text span{ font-size:13px; color:var(--ozkiz-muted); }
       .view-toggle{display:flex; gap:6px; flex-shrink:0;}
       .view-btn{width:auto; padding:9px 16px; font-size:13px; border-radius:999px; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
@@ -87,7 +88,7 @@
       <div class="card brand">
         <div class="brand-badge">OH</div>
         <div class="brand-text">
-          <h1>OH!Barcode</h1>
+          <h1><span class="brand-mark">OH!</span> Barcode</h1>
           <span>상품명을 입력하면 Supabase의 상품 데이터에서 바코드를 찾아 바로 스티커 출력 요청을 보냅니다.</span>
         </div>
         <div class="view-toggle">

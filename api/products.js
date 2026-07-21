@@ -9,6 +9,16 @@ function buildSearchTokens(query = '') {
     .filter(Boolean);
 }
 
+const SIZE_TOKEN_PATTERN = /^(\d{2,4}|XXS|XS|S|M|L|XL|XXL|FREE|F)$/i;
+
+function isSizeToken(token) {
+  return SIZE_TOKEN_PATTERN.test(token);
+}
+
+function escapeRegex(token) {
+  return token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function fetchProductsFromSupabase(query) {
   const tokens = buildSearchTokens(query);
   if (!tokens.length) {
@@ -18,13 +28,21 @@ async function fetchProductsFromSupabase(query) {
   return withClient(async (client) => {
     const whereClauses = tokens.map((token, index) => {
       const paramIndex = index + 1;
+      if (isSizeToken(token)) {
+        return `"옵션" ~* $${paramIndex}`;
+      }
       return `("상품명" ILIKE $${paramIndex} OR "옵션" ILIKE $${paramIndex})`;
     }).join(' AND ');
 
     const isLatinQuery = /[A-Za-z]/.test(query);
     const excludeArtworkClause = isLatinQuery ? ` AND "상품명" NOT ILIKE '%아트웍%'` : '';
 
-    const params = tokens.map((token) => `%${token}%`);
+    const params = tokens.map((token) => {
+      if (isSizeToken(token)) {
+        return `(^|[^A-Za-z0-9])${escapeRegex(token)}($|[^A-Za-z0-9])`;
+      }
+      return `%${token}%`;
+    });
     const result = await client.query(
       `SELECT
         "고유키" AS id,

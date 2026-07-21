@@ -70,6 +70,10 @@
       .qty-time{margin-left:auto; flex:0 0 auto;}
       .job-actions{display:flex; gap:8px; margin-top:10px;}
       .job-actions button{width:auto; padding:8px 14px; font-size:13px;}
+      .queue-toolbar{display:flex; gap:6px; margin-bottom:12px;}
+      .queue-toolbar button{width:auto; flex:1; padding:9px 4px; font-size:12.5px; white-space:nowrap;}
+      .log-actions{display:flex; justify-content:flex-end; margin-top:8px;}
+      .log-actions button{width:auto; padding:7px 14px; font-size:13px;}
       @media (max-width:800px){.grid{grid-template-columns:1fr;}}
 
       body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
@@ -111,7 +115,7 @@
 
         <div class="card">
           <h2>출력 대기열</h2>
-          <div class="row" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+          <div class="queue-toolbar">
             <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
             <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
             <button id="printAllButton" class="secondary" type="button">전체 출력</button>
@@ -174,9 +178,22 @@
             <div class="row"><strong>${log.barcode}</strong><span>${new Date(log.printedAt).toLocaleString()}</span></div>
             <div class="small">품번: ${log.sku || '-'} / 옵션: ${log.option || '-'}</div>
             ${log.note ? `<div class="small">상품명: ${log.note}</div>` : ''}
+            <div class="log-actions">
+              <button type="button" class="ghost" onclick="reprintLog('${log.id}')">재출력</button>
+            </div>
           </div>
         `).join('');
       }
+
+      window.reprintLog = function(logId) {
+        const log = state.logs.find((item) => item.id === logId);
+        if (!log) return;
+        const job = { barcode: log.barcode, quantity: 1, note: log.note, sku: log.sku, option: log.option };
+        const printWindow = window.open('', '_blank', 'width=420,height=320');
+        printWindow.document.write(buildLabelHtml(job));
+        printWindow.document.close();
+        setTimeout(() => { printWindow.print(); }, 400);
+      };
 
       function statusLabel(status) {
         if (status === 'printing') return '출력중';

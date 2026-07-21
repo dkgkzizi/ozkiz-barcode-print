@@ -350,15 +350,15 @@
           * { box-sizing: border-box; }
           html, body { margin:0; padding:0; width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; color:#111; background:#fff; }
           .label { width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; padding:2mm 3mm; display:flex; flex-direction:column; overflow:hidden; }
-          .field { display:flex; align-items:baseline; font-size:8pt; line-height:1.5; }
-          .field .field-label { font-weight:700; flex:0 0 15mm; }
-          .field .field-value { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .field { display:flex; align-items:baseline; font-size:11.5pt; line-height:1.55; white-space:nowrap; overflow:hidden; }
+          .field .field-label { font-weight:800; flex:0 0 20mm; }
+          .field .field-value { font-weight:500; flex:1; overflow:hidden; text-overflow:ellipsis; }
           .barcode-wrap { flex:1; display:flex; align-items:center; justify-content:center; margin-top:1mm; overflow:hidden; }
-          .barcode-wrap svg { width:${LABEL_WIDTH_MM - 12}mm; height:14mm; }
+          .barcode-wrap svg { width:${LABEL_WIDTH_MM - 6}mm; height:15mm; }
         </style></head><body><div class="label">
-            <div class="field"><span class="field-label">제품명</span><span class="field-value">${name}</span></div>
-            <div class="field"><span class="field-label">품번</span><span class="field-value">${sku}</span></div>
-            <div class="field"><span class="field-label">옵션</span><span class="field-value">${option}</span></div>
+            <div class="field"><span class="field-label">제품명 :</span><span class="field-value">${name}</span></div>
+            <div class="field"><span class="field-label">품 번 :</span><span class="field-value">${sku}</span></div>
+            <div class="field"><span class="field-label">옵 션 :</span><span class="field-value">${option}</span></div>
             <div class="barcode-wrap">${barcodeSvg}</div>
           </div></body></html>`;
       }

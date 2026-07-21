@@ -406,11 +406,17 @@
       }
 
       function buildLabelHtml(job, product) {
-        return buildLabelDocument(buildLabelBodyHtml(job, product));
+        const quantity = Math.max(1, Math.floor(Number(job.quantity)) || 1);
+        const bodyHtml = Array.from({ length: quantity }, () => buildLabelBodyHtml(job, product)).join('');
+        return buildLabelDocument(bodyHtml);
       }
 
       function buildBatchLabelHtml(items) {
-        return buildLabelDocument(items.map(({ job, product }) => buildLabelBodyHtml(job, product)).join(''));
+        const bodyHtml = items.flatMap(({ job, product }) => {
+          const quantity = Math.max(1, Math.floor(Number(job.quantity)) || 1);
+          return Array.from({ length: quantity }, () => buildLabelBodyHtml(job, product));
+        }).join('');
+        return buildLabelDocument(bodyHtml);
       }
 
       async function printLabelWindow(job, product) {

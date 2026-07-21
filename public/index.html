@@ -62,9 +62,9 @@
       .qty-input{width:48px; flex:0 0 48px; padding:6px 4px; text-align:center; font-weight:700;}
       .qty-time{margin-left:auto; flex:0 0 auto;}
       .job-actions{display:flex; gap:8px; margin-top:10px;}
-      .job-actions button{width:auto; padding:8px 14px; font-size:13px;}
-      .queue-toolbar{display:flex; gap:6px; margin-bottom:12px;}
-      .queue-toolbar button{width:auto; flex:1; padding:9px 4px; font-size:12.5px; white-space:nowrap;}
+      .job-actions button{width:auto; padding:6px 12px; font-size:12px;}
+      .queue-toolbar{display:flex; gap:6px; margin-bottom:8px;}
+      .queue-toolbar button{width:auto; flex:1; padding:7px 4px; font-size:12px; white-space:nowrap;}
       .log-actions{display:flex; justify-content:flex-end; margin-top:8px;}
       .log-actions button{width:auto; padding:7px 14px; font-size:13px;}
       .log-toolbar{display:flex; gap:8px; flex-shrink:0;}
@@ -114,6 +114,10 @@
             <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
             <button id="printAllButton" class="secondary" type="button">전체 출력</button>
           </div>
+          <div class="queue-toolbar">
+            <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
+            <button id="deleteAllButton" class="ghost" type="button">전체 삭제</button>
+          </div>
           <div id="jobList"></div>
         </div>
       </div>
@@ -139,6 +143,8 @@
       const selectAllButton = document.getElementById('selectAllButton');
       const printSelectedButton = document.getElementById('printSelectedButton');
       const printAllButton = document.getElementById('printAllButton');
+      const deleteSelectedButton = document.getElementById('deleteSelectedButton');
+      const deleteAllButton = document.getElementById('deleteAllButton');
       const viewPcButton = document.getElementById('viewPcButton');
       const viewMobileButton = document.getElementById('viewMobileButton');
       const toggleLogsButton = document.getElementById('toggleLogsButton');
@@ -369,27 +375,42 @@
         return wrapper.innerHTML;
       }
 
-      function buildLabelHtml(job, product) {
+      function buildLabelBodyHtml(job, product) {
         const name = product?.name || job.note || job.barcode || '상품명 없음';
         const sku = product?.sku || job.sku || job.barcode || '';
         const option = product?.option || job.option || '-';
         const barcodeSvg = generateBarcodeSvg(job.barcode);
+        return `
+          <div class="label">
+            <div class="field"><span class="field-label">제품명 :</span><span class="field-value">${name}</span></div>
+            <div class="field"><span class="field-label">품 번 :</span><span class="field-value">${sku}</span></div>
+            <div class="field"><span class="field-label">옵 션 :</span><span class="field-value">${option}</span></div>
+            <div class="barcode-wrap">${barcodeSvg}</div>
+          </div>
+        `;
+      }
+
+      function buildLabelDocument(bodyHtml) {
         return `<!doctype html><html><head><meta charset="utf-8" /><title>Barcode Print</title><style>
           @page { size: ${LABEL_WIDTH_MM}mm ${LABEL_HEIGHT_MM}mm; margin: 0; }
           * { box-sizing: border-box; }
-          html, body { margin:0; padding:0; width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; color:#111; background:#fff; }
-          .label { width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; padding:2mm 3mm; display:flex; flex-direction:column; overflow:hidden; }
+          html, body { margin:0; padding:0; font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; color:#111; background:#fff; }
+          .label { width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; padding:2mm 3mm; display:flex; flex-direction:column; overflow:hidden; page-break-after:always; break-after:page; }
+          .label:last-child { page-break-after:auto; break-after:auto; }
           .field { display:flex; align-items:baseline; font-size:11.5pt; line-height:1.55; white-space:nowrap; overflow:hidden; }
           .field .field-label { font-weight:800; flex:0 0 20mm; }
           .field .field-value { font-weight:500; flex:1; overflow:hidden; text-overflow:ellipsis; }
           .barcode-wrap { flex:1; display:flex; align-items:center; justify-content:center; margin-top:1mm; overflow:hidden; }
           .barcode-wrap svg { width:${LABEL_WIDTH_MM - 6}mm; height:15mm; }
-        </style></head><body><div class="label">
-            <div class="field"><span class="field-label">제품명 :</span><span class="field-value">${name}</span></div>
-            <div class="field"><span class="field-label">품 번 :</span><span class="field-value">${sku}</span></div>
-            <div class="field"><span class="field-label">옵 션 :</span><span class="field-value">${option}</span></div>
-            <div class="barcode-wrap">${barcodeSvg}</div>
-          </div></body></html>`;
+        </style></head><body>${bodyHtml}</body></html>`;
+      }
+
+      function buildLabelHtml(job, product) {
+        return buildLabelDocument(buildLabelBodyHtml(job, product));
+      }
+
+      function buildBatchLabelHtml(items) {
+        return buildLabelDocument(items.map(({ job, product }) => buildLabelBodyHtml(job, product)).join(''));
       }
 
       async function printLabelWindow(job, product) {
@@ -407,12 +428,30 @@
         await refreshJobs();
         await refreshLogs();
       }
-      
-      async function printJobs(jobsToPrint) {
-        for (const job of jobsToPrint) {
-          const product = state.products.find((item) => item.barcode === job.barcode) || { name: job.note, sku: job.sku, option: job.option };
-          await printJobModel(job, product);
-        }
+
+      async function printJobsBatch(jobsToPrint) {
+        if (!jobsToPrint.length) return;
+
+        await Promise.all(jobsToPrint.map((job) =>
+          fetch(`/api/jobs/${job.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'printing' }) })
+        ));
+
+        const items = jobsToPrint.map((job) => ({
+          job,
+          product: state.products.find((item) => item.barcode === job.barcode) || { name: job.note, sku: job.sku, option: job.option }
+        }));
+
+        const printWindow = window.open('', '_blank', 'width=420,height=320');
+        printWindow.document.write(buildBatchLabelHtml(items));
+        printWindow.document.close();
+        setTimeout(() => { printWindow.print(); }, 400);
+
+        await Promise.all(jobsToPrint.map((job) =>
+          fetch(`/api/jobs/${job.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'printed' }) })
+        ));
+
+        await refreshJobs();
+        await refreshLogs();
       }
 
       async function deleteJob(jobId) {
@@ -466,7 +505,7 @@
           searchMessage.textContent = '선택된 항목이 없습니다.';
           return;
         }
-        await printJobs(selected);
+        await printJobsBatch(selected);
       });
 
       printAllButton.addEventListener('click', async () => {
@@ -474,7 +513,30 @@
           searchMessage.textContent = '대기열에 항목이 없습니다.';
           return;
         }
-        await printJobs(state.jobs);
+        await printJobsBatch(state.jobs.slice());
+      });
+
+      deleteSelectedButton.addEventListener('click', async () => {
+        const selected = state.jobs.filter((job) => state.selectedJobs.has(job.id));
+        if (!selected.length) {
+          searchMessage.textContent = '선택된 항목이 없습니다.';
+          return;
+        }
+        if (!window.confirm(`선택한 ${selected.length}개 항목을 삭제할까요?`)) return;
+        await Promise.all(selected.map((job) => fetch(`/api/jobs/${job.id}`, { method: 'DELETE' })));
+        selected.forEach((job) => state.selectedJobs.delete(job.id));
+        await refreshJobs();
+      });
+
+      deleteAllButton.addEventListener('click', async () => {
+        if (!state.jobs.length) {
+          searchMessage.textContent = '대기열에 항목이 없습니다.';
+          return;
+        }
+        if (!window.confirm(`대기열 전체(${state.jobs.length}개)를 삭제할까요?`)) return;
+        await Promise.all(state.jobs.map((job) => fetch(`/api/jobs/${job.id}`, { method: 'DELETE' })));
+        state.selectedJobs.clear();
+        await refreshJobs();
       });
 
       jobList.addEventListener('change', (event) => {

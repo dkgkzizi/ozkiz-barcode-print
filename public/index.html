@@ -197,7 +197,7 @@
         const log = state.logs.find((item) => item.id === logId);
         if (!log) return;
         const job = { barcode: log.barcode, quantity: 1, note: log.note, sku: log.sku, option: log.option };
-        const printWindow = window.open('', '_blank', 'width=420,height=320');
+        const printWindow = window.open('', '_blank', 'width=960,height=680');
         printWindow.document.write(buildLabelHtml(job));
         printWindow.document.close();
         setTimeout(() => { printWindow.print(); }, 400);
@@ -421,7 +421,7 @@
 
       async function printLabelWindow(job, product) {
         await fetch(`/api/jobs/${job.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'printing' }) });
-        const printWindow = window.open('', '_blank', 'width=420,height=320');
+        const printWindow = window.open('', '_blank', 'width=960,height=680');
         printWindow.document.write(buildLabelHtml(job, product));
         printWindow.document.close();
         setTimeout(() => { printWindow.print(); }, 400);
@@ -447,7 +447,7 @@
           product: state.products.find((item) => item.barcode === job.barcode) || { name: job.note, sku: job.sku, option: job.option }
         }));
 
-        const printWindow = window.open('', '_blank', 'width=420,height=320');
+        const printWindow = window.open('', '_blank', 'width=960,height=680');
         printWindow.document.write(buildBatchLabelHtml(items));
         printWindow.document.close();
         setTimeout(() => { printWindow.print(); }, 400);

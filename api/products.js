@@ -21,6 +21,9 @@ async function fetchProductsFromSupabase(query) {
       return `("상품명" ILIKE $${paramIndex} OR "옵션" ILIKE $${paramIndex})`;
     }).join(' AND ');
 
+    const isLatinQuery = /[A-Za-z]/.test(query);
+    const excludeArtworkClause = isLatinQuery ? ` AND "상품명" NOT ILIKE '%아트웍%'` : '';
+
     const params = tokens.map((token) => `%${token}%`);
     const result = await client.query(
       `SELECT
@@ -30,7 +33,7 @@ async function fetchProductsFromSupabase(query) {
         "상품코드" AS sku,
         "옵션" AS option
       FROM public.products
-      WHERE ${whereClauses}
+      WHERE ${whereClauses}${excludeArtworkClause}
       ORDER BY "업로드일시" DESC
       LIMIT 30`,
       params

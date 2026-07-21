@@ -3,30 +3,30 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>모바일 바코드 출력</title>
+    <title>OH!Barcode</title>
     <style>
       :root{
-        --ozkiz-orange:#ff6a3d;
-        --ozkiz-orange-dark:#f0501f;
-        --ozkiz-pink:#ff8fab;
-        --ozkiz-pink-soft:#ffe3ea;
-        --ozkiz-bg:#fffaf6;
+        --ozkiz-orange:#7c3aed;
+        --ozkiz-orange-dark:#6d28d9;
+        --ozkiz-pink:#fb923c;
+        --ozkiz-pink-soft:#ffedd5;
+        --ozkiz-bg:#f6f5fb;
         --ozkiz-card:#ffffff;
-        --ozkiz-line:#ffe1d2;
-        --ozkiz-text:#3d2b26;
-        --ozkiz-muted:#9a8a83;
+        --ozkiz-line:#e6e4f0;
+        --ozkiz-text:#211f36;
+        --ozkiz-muted:#726f8c;
       }
       * { box-sizing:border-box; }
       body { margin:0; font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif; background:var(--ozkiz-bg); color:var(--ozkiz-text); }
       .wrap { max-width:1100px; margin:0 auto; padding:24px; }
-      .card { background:var(--ozkiz-card); border:1px solid var(--ozkiz-line); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 6px 20px rgba(255,106,61,0.08); }
+      .card { background:var(--ozkiz-card); border:1px solid var(--ozkiz-line); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 6px 20px rgba(124,58,237,0.08); }
       .brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
       .brand-badge{
         display:inline-flex; align-items:center; justify-content:center;
         width:52px; height:52px; border-radius:16px;
         background:linear-gradient(135deg, var(--ozkiz-orange), var(--ozkiz-pink));
         color:#fff; font-weight:800; font-size:20px; letter-spacing:-1px;
-        box-shadow:0 4px 12px rgba(255,106,61,0.35);
+        box-shadow:0 4px 12px rgba(124,58,237,0.35);
         flex-shrink:0;
       }
       .brand-text{flex:1; min-width:180px;}
@@ -34,7 +34,7 @@
       .brand-text span{ font-size:13px; color:var(--ozkiz-muted); }
       .view-toggle{display:flex; gap:6px; flex-shrink:0;}
       .view-btn{width:auto; padding:9px 16px; font-size:13px; border-radius:999px; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
-      .view-btn:hover{background:#ffd0dd;}
+      .view-btn:hover{background:#ffdcb8;}
       .view-btn.active{background:var(--ozkiz-orange); color:#fff;}
       .view-btn.active:hover{background:var(--ozkiz-orange-dark);}
       h1,h2{margin-top:0; color:var(--ozkiz-text);}
@@ -47,10 +47,10 @@
       button{cursor:pointer; background:var(--ozkiz-orange); color:white; font-weight:700; border:none; transition:transform .05s ease, background .15s ease;}
       button:hover{background:var(--ozkiz-orange-dark);}
       button:active{transform:scale(0.98);}
-      button.secondary{background:var(--ozkiz-pink); color:#5c1f33;}
-      button.secondary:hover{background:#ff779c;}
+      button.secondary{background:var(--ozkiz-pink); color:#5c2a0c;}
+      button.secondary:hover{background:#f97316;}
       button.ghost{background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
-      .job, .product {border:1px solid var(--ozkiz-line); border-radius:14px; padding:12px; background:#fffdfb; margin-bottom:8px;}
+      .job, .product {border:1px solid var(--ozkiz-line); border-radius:14px; padding:12px; background:#fbfbfe; margin-bottom:8px;}
       .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
       #productResults{max-height:520px; overflow-y:auto; padding-right:4px;}
       .product{margin-bottom:10px;}
@@ -64,7 +64,7 @@
       .job-note{margin-top:4px;}
       .qty-row{display:flex; align-items:center; gap:8px; margin-top:10px;}
       .qty-btn{width:32px; height:32px; flex:0 0 32px; padding:0; border-radius:10px; font-size:17px; font-weight:800; line-height:1; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
-      .qty-btn:hover{background:#ffd0dd;}
+      .qty-btn:hover{background:#ffdcb8;}
       .qty-input{width:48px; flex:0 0 48px; padding:6px 4px; text-align:center; font-weight:700;}
       .qty-time{margin-left:auto; flex:0 0 auto;}
       .job-actions{display:flex; gap:8px; margin-top:10px;}
@@ -85,9 +85,9 @@
   <body>
     <div class="wrap">
       <div class="card brand">
-        <div class="brand-badge">OZ</div>
+        <div class="brand-badge">OH</div>
         <div class="brand-text">
-          <h1>OZKIZ 오즈키즈 바코드 출력</h1>
+          <h1>OH!Barcode</h1>
           <span>상품명을 입력하면 Supabase의 상품 데이터에서 바코드를 찾아 바로 스티커 출력 요청을 보냅니다.</span>
         </div>
         <div class="view-toggle">
@@ -193,7 +193,7 @@
         jobList.innerHTML = state.jobs.map((job) => {
           const isSelected = state.selectedJobs.has(job.id);
           return `
-          <div class="job" style="border-color:${isSelected ? '#ff6a3d' : '#ffe1d2'};">
+          <div class="job" style="border-color:${isSelected ? '#7c3aed' : '#e6e4f0'};">
             <div class="job-top">
               <input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} />
               <strong>${job.barcode}</strong>

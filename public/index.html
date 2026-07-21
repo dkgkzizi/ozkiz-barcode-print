@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>모바일 바코드 출력</title>
+    <style>
+      :root{
+        --ozkiz-orange:#ff6a3d;
+        --ozkiz-orange-dark:#f0501f;
+        --ozkiz-pink:#ff8fab;
+        --ozkiz-pink-soft:#ffe3ea;
+        --ozkiz-bg:#fffaf6;
+        --ozkiz-card:#ffffff;
+        --ozkiz-line:#ffe1d2;
+        --ozkiz-text:#3d2b26;
+        --ozkiz-muted:#9a8a83;
+      }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif; background:var(--ozkiz-bg); color:var(--ozkiz-text); }
+      .wrap { max-width:1100px; margin:0 auto; padding:24px; }
+      .card { background:var(--ozkiz-card); border:1px solid var(--ozkiz-line); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 6px 20px rgba(255,106,61,0.08); }
+      .brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+      .brand-badge{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:52px; height:52px; border-radius:16px;
+        background:linear-gradient(135deg, var(--ozkiz-orange), var(--ozkiz-pink));
+        color:#fff; font-weight:800; font-size:20px; letter-spacing:-1px;
+        box-shadow:0 4px 12px rgba(255,106,61,0.35);
+        flex-shrink:0;
+      }
+      .brand-text{flex:1; min-width:180px;}
+      .brand-text h1{ font-size:22px; margin:0; color:var(--ozkiz-orange-dark); letter-spacing:-0.5px; }
+      .brand-text span{ font-size:13px; color:var(--ozkiz-muted); }
+      .view-toggle{display:flex; gap:6px; flex-shrink:0;}
+      .view-btn{width:auto; padding:9px 16px; font-size:13px; border-radius:999px; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
+      .view-btn:hover{background:#ffd0dd;}
+      .view-btn.active{background:var(--ozkiz-orange); color:#fff;}
+      .view-btn.active:hover{background:var(--ozkiz-orange-dark);}
+      h1,h2{margin-top:0; color:var(--ozkiz-text);}
+      h2{font-size:18px; color:var(--ozkiz-orange-dark);}
+      .grid{display:grid; gap:16px; grid-template-columns:1fr 1fr;}
+      label{display:block; margin-bottom:8px; font-weight:600; color:var(--ozkiz-text);}
+      input, textarea, select, button{width:100%; padding:12px; border-radius:12px; border:1px solid var(--ozkiz-line); font-size:15px; font-family:inherit;}
+      input, select{background:#fff; color:var(--ozkiz-text);}
+      button{cursor:pointer; background:var(--ozkiz-orange); color:white; font-weight:700; border:none; transition:transform .05s ease, background .15s ease;}
+      button:hover{background:var(--ozkiz-orange-dark);}
+      button:active{transform:scale(0.98);}
+      button.secondary{background:var(--ozkiz-pink); color:#5c1f33;}
+      button.secondary:hover{background:#ff779c;}
+      button.ghost{background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
+      .job, .product {border:1px solid var(--ozkiz-line); border-radius:14px; padding:12px; background:#fffdfb; margin-bottom:8px;}
+      .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
+      #productResults{max-height:520px; overflow-y:auto; padding-right:4px;}
+      .product{margin-bottom:10px;}
+      .product-actions{display:flex; gap:8px; margin-top:8px;}
+      .product-actions .print-btn{flex:1;}
+      .product-actions .add-btn{flex:0 0 44px; padding:12px 0; font-size:16px; font-weight:800;}
+      .small{font-size:14px; color:var(--ozkiz-muted);}
+      @media (max-width:800px){.grid{grid-template-columns:1fr;}}
+
+      body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
+      body.force-mobile .grid{grid-template-columns:1fr !important;}
+      body.force-mobile .wrap{padding:14px;}
+      body.force-mobile .card{padding:16px; border-radius:16px;}
+      body.force-mobile input, body.force-mobile select, body.force-mobile button{font-size:16px; padding:14px;}
+      body.force-mobile h2{font-size:17px;}
+      body.force-mobile .product-actions .add-btn{flex:0 0 52px; font-size:18px;}
+      body.force-mobile .small{font-size:13px;}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card brand">
+        <div class="brand-badge">OZ</div>
+        <div class="brand-text">
+          <h1>OZKIZ 오즈키즈 바코드 출력</h1>
+          <span>상품명을 입력하면 Supabase의 상품 데이터에서 바코드를 찾아 바로 스티커 출력 요청을 보냅니다.</span>
+        </div>
+        <div class="view-toggle">
+          <button type="button" id="viewPcButton" class="view-btn">PC 버전</button>
+          <button type="button" id="viewMobileButton" class="view-btn">모바일 버전</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>바코드 스티커 출력</h2>
+          <label>검색어</label>
+          <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
+          <div class="row" style="margin-top:10px;">
+            <button id="searchButton" type="button">검색</button>
+          </div>
+          <p id="searchMessage" class="small"></p>
+          <div id="productResults"></div>
+        </div>
+
+        <div class="card">
+          <h2>출력 대기열</h2>
+          <div class="row" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+            <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
+            <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+            <button id="printAllButton" class="secondary" type="button">전체 출력</button>
+          </div>
+          <div id="jobList"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>출력 로그</h2>
+        <div id="logList"></div>
+      </div>
+    </div>
+
+    <script>
+      const searchInput = document.getElementById('productQuery');
+      const searchButton = document.getElementById('searchButton');
+      const searchMessage = document.getElementById('searchMessage');
+      const productResults = document.getElementById('productResults');
+      const jobList = document.getElementById('jobList');
+      const logList = document.getElementById('logList');
+      const selectAllButton = document.getElementById('selectAllButton');
+      const printSelectedButton = document.getElementById('printSelectedButton');
+      const printAllButton = document.getElementById('printAllButton');
+      const viewPcButton = document.getElementById('viewPcButton');
+      const viewMobileButton = document.getElementById('viewMobileButton');
+      const state = { jobs: [], products: [], logs: [], searched: false, selectedJobs: new Set() };
+
+      function applyViewMode(mode) {
+        const isMobile = mode === 'mobile';
+        document.body.classList.toggle('force-mobile', isMobile);
+        document.body.classList.toggle('force-pc', !isMobile);
+        viewPcButton.classList.toggle('active', !isMobile);
+        viewMobileButton.classList.toggle('active', isMobile);
+        localStorage.setItem('viewMode', mode);
+      }
+
+      viewPcButton.addEventListener('click', () => applyViewMode('pc'));
+      viewMobileButton.addEventListener('click', () => applyViewMode('mobile'));
+
+      async function refreshJobs() {
+        const response = await fetch('/api/jobs');
+        state.jobs = await response.json();
+        renderJobs();
+      }
+
+      async function refreshLogs() {
+        const response = await fetch('/api/logs');
+        state.logs = await response.json();
+        renderLogs();
+      }
+
+      function renderLogs() {
+        if (!state.logs.length) {
+          logList.innerHTML = '<div class="job"><div class="small">출력 로그가 없습니다.</div></div>';
+          return;
+        }
+
+        logList.innerHTML = state.logs.map((log) => `
+          <div class="job">
+            <div class="row"><strong>${log.barcode}</strong><span>${new Date(log.printedAt).toLocaleString()}</span></div>
+            <div class="small">품번: ${log.sku || '-'} / 옵션: ${log.option || '-'}</div>
+            ${log.note ? `<div class="small">상품명: ${log.note}</div>` : ''}
+          </div>
+        `).join('');
+      }
+
+      function renderJobs() {
+        if (!state.jobs.length) {
+          jobList.innerHTML = '<div class="job"><div class="small">대기 중인 요청이 없습니다.</div></div>';
+          state.selectedJobs.clear();
+          return;
+        }
+
+        jobList.innerHTML = state.jobs.map((job) => {
+          const isSelected = state.selectedJobs.has(job.id);
+          return `
+          <div class="job" style="border-color:${isSelected ? '#ff6a3d' : '#ffe1d2'};">
+            <div class="row"><label><input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} /> <strong>${job.barcode}</strong></label><span>${job.status}</span></div>
+            <div class="small">수량: ${job.quantity} / 소스: ${job.source}</div>
+            ${job.note ? `<div class="small">메모: ${job.note}</div>` : ''}
+            <div class="row" style="margin-top:8px; gap:8px;">
+              <span class="small">${new Date(job.createdAt).toLocaleString()}</span>
+              <div style="display:flex;gap:8px;">
+                <button class="secondary" type="button" onclick="printJob('${job.id}')">출력</button>
+                <button class="secondary" type="button" onclick="deleteJob('${job.id}')">삭제</button>
+              </div>
+            </div>
+          </div>
+        `;
+        }).join('');
+      }
+
+      function renderProducts() {
+        if (!state.searched) {
+          productResults.innerHTML = '<div class="product"><div class="small">상품명을 입력한 뒤 검색 버튼을 눌러주세요.</div></div>';
+          return;
+        }
+
+        if (!state.products.length) {
+          productResults.innerHTML = '<div class="product"><div class="small">검색 결과가 없습니다. 다른 키워드를 시도해 보세요.</div></div>';
+          return;
+        }
+
+        productResults.innerHTML = state.products.map((product, index) => `
+          <div class="product">
+            <div class="row"><strong>${product.name}</strong><span class="small">${product.barcode || '바코드 없음'}</span></div>
+            <div class="small">SKU: ${product.sku || '-'}</div>
+            <div class="small">옵션: ${product.option || '-'}</div>
+            <div class="product-actions">
+              <button class="print-btn" type="button" data-action="print" data-index="${index}" ${product.barcode ? '' : 'disabled'}>출력</button>
+              <button class="ghost add-btn" type="button" data-action="add" data-index="${index}" ${product.barcode ? '' : 'disabled'} title="대기열에 추가">+</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function searchProducts() {
+        const query = searchInput.value.trim();
+        state.searched = true;
+
+        if (!query) {
+          state.products = [];
+          searchMessage.textContent = '검색어를 입력해주세요.';
+          renderProducts();
+          return;
+        }
+
+        const response = await fetch(`/api/products?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        state.products = data.products || [];
+        searchMessage.textContent = data.source === 'supabase'
+          ? `${state.products.length}개 찾음`
+          : data.source === 'sample'
+            ? `샘플 데이터에서 ${state.products.length}개 찾음`
+            : '검색 결과가 없습니다.';
+        renderProducts();
+      }
+
+      async function addProductToQueue(product) {
+        if (!product?.barcode) {
+          searchMessage.textContent = '이 상품에는 바코드가 없어 대기열에 추가할 수 없습니다.';
+          return;
+        }
+
+        const payload = {
+          barcode: product.barcode,
+          quantity: 1,
+          note: product.name,
+          sku: product.sku || '',
+          option: product.option || '',
+          source: /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+        };
+
+        await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        searchMessage.textContent = `${product.name}이 대기열에 추가되었습니다.`;
+        await refreshJobs();
+      }
+
+      async function printProductNow(product) {
+        if (!product?.barcode) {
+          searchMessage.textContent = '이 상품에는 바코드가 없어 출력할 수 없습니다.';
+          return;
+        }
+
+        const payload = {
+          barcode: product.barcode,
+          quantity: 1,
+          note: product.name,
+          sku: product.sku || '',
+          option: product.option || '',
+          source: /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+        };
+
+        const response = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const job = await response.json();
+        await printJobModel(job, product);
+        searchMessage.textContent = `${product.name} 바코드를 출력했습니다.`;
+      }
+
+      const LABEL_WIDTH_MM = 80;
+      const LABEL_HEIGHT_MM = 40;
+
+      function generateBarcodeSvg(code) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = '<svg></svg>';
+        const svg = wrapper.firstElementChild;
+        JsBarcode(svg, String(code || '').trim(), {
+          format: 'CODE128',
+          displayValue: true,
+          fontSize: 14,
+          width: 2,
+          height: 50,
+          margin: 4,
+          textMargin: 4
+        });
+        return wrapper.innerHTML;
+      }
+
+      function buildLabelHtml(job, product) {
+        const name = product?.name || job.note || job.barcode || '상품명 없음';
+        const sku = product?.sku || job.sku || job.barcode || '';
+        const option = product?.option || job.option || '-';
+        const barcodeSvg = generateBarcodeSvg(job.barcode);
+        return `<!doctype html><html><head><meta charset="utf-8" /><title>Barcode Print</title><style>
+          @page { size: ${LABEL_WIDTH_MM}mm ${LABEL_HEIGHT_MM}mm; margin: 0; }
+          * { box-sizing: border-box; }
+          html, body { margin:0; padding:0; width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; color:#111; background:#fff; }
+          .label { width:${LABEL_WIDTH_MM}mm; height:${LABEL_HEIGHT_MM}mm; padding:2mm 3mm; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; }
+          .label .name { font-size:9pt; font-weight:700; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .label .meta { font-size:6.5pt; text-align:center; color:#222; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .barcode-wrap { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+          .barcode-wrap svg { width:${LABEL_WIDTH_MM - 12}mm; height:16mm; }
+        </style></head><body><div class="label">
+            <div class="name">${name}</div>
+            <div class="barcode-wrap">${barcodeSvg}</div>
+            <div class="meta">품번 ${sku} · 옵션 ${option} · 수량 ${job.quantity}</div>
+          </div></body></html>`;
+      }
+
+      async function printLabelWindow(job, product) {
+        await fetch(`/api/jobs/${job.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'printing' }) });
+        const printWindow = window.open('', '_blank', 'width=420,height=320');
+        printWindow.document.write(buildLabelHtml(job, product));
+        printWindow.document.close();
+        setTimeout(() => { printWindow.print(); }, 400);
+        await fetch(`/api/jobs/${job.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'printed' }) });
+      }
+
+      async function printJobModel(job, product) {
+        if (!job) return;
+        await printLabelWindow(job, product);
+        await refreshJobs();
+        await refreshLogs();
+      }
+      
+      async function printJobs(jobsToPrint) {
+        for (const job of jobsToPrint) {
+          const product = state.products.find((item) => item.barcode === job.barcode) || { name: job.note, sku: job.sku, option: job.option };
+          await printJobModel(job, product);
+        }
+      }
+
+      async function deleteJob(jobId) {
+        await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+        state.selectedJobs.delete(jobId);
+        await refreshJobs();
+      }
+
+      window.printJob = async function(jobId) {
+        const job = state.jobs.find((item) => item.id === jobId);
+        if (!job) return;
+        const product = state.products.find((item) => item.barcode === job.barcode) || { name: job.note, sku: job.sku, option: job.option };
+        await printLabelWindow(job, product);
+        await refreshJobs();
+        await refreshLogs();
+      };
+
+      searchButton.addEventListener('click', searchProducts);
+      searchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          searchProducts();
+        }
+      });
+
+      productResults.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-index]');
+        if (!button) return;
+        const index = Number(button.getAttribute('data-index'));
+        const product = state.products[index];
+        if (!product) return;
+        if (button.getAttribute('data-action') === 'print') {
+          await printProductNow(product);
+        } else {
+          await addProductToQueue(product);
+        }
+      });
+
+      selectAllButton.addEventListener('click', () => {
+        if (state.selectedJobs.size === state.jobs.length) {
+          state.selectedJobs.clear();
+        } else {
+          state.selectedJobs = new Set(state.jobs.map((job) => job.id));
+        }
+        renderJobs();
+      });
+
+      printSelectedButton.addEventListener('click', async () => {
+        const selected = state.jobs.filter((job) => state.selectedJobs.has(job.id));
+        if (!selected.length) {
+          searchMessage.textContent = '선택된 항목이 없습니다.';
+          return;
+        }
+        await printJobs(selected);
+      });
+
+      printAllButton.addEventListener('click', async () => {
+        if (!state.jobs.length) {
+          searchMessage.textContent = '대기열에 항목이 없습니다.';
+          return;
+        }
+        await printJobs(state.jobs);
+      });
+
+      jobList.addEventListener('change', (event) => {
+        const checkbox = event.target.closest('input[type="checkbox"][data-job-id]');
+        if (!checkbox) return;
+        const jobId = checkbox.getAttribute('data-job-id');
+        if (checkbox.checked) {
+          state.selectedJobs.add(jobId);
+        } else {
+          state.selectedJobs.delete(jobId);
+        }
+        renderJobs();
+      });
+
+      const savedViewMode = localStorage.getItem('viewMode');
+      const initialViewMode = savedViewMode || (window.matchMedia('(max-width:800px)').matches ? 'mobile' : 'pc');
+      applyViewMode(initialViewMode);
+
+      refreshJobs();
+      refreshLogs();
+      renderProducts();
+      setInterval(() => {
+        refreshJobs();
+        refreshLogs();
+      }, 3000);
+    </script>
+  </body>
+</html>

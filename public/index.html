@@ -226,14 +226,16 @@
         }).join('');
       }
 
-      async function updateJobQuantity(jobId, quantity) {
+      function updateJobQuantity(jobId, quantity) {
         const safeQuantity = Math.max(1, Math.floor(Number(quantity)) || 1);
-        await fetch(`/api/jobs/${jobId}`, {
+        const job = state.jobs.find((item) => item.id === jobId);
+        if (job) job.quantity = safeQuantity;
+        renderJobs();
+        fetch(`/api/jobs/${jobId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'setQuantity', quantity: safeQuantity })
         });
-        await refreshJobs();
       }
 
       function renderProducts() {
@@ -297,13 +299,20 @@
           source: /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
         };
 
-        await fetch('/api/jobs', {
+        const response = await fetch('/api/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        const job = await response.json();
+        const existingIndex = state.jobs.findIndex((item) => item.id === job.id);
+        if (existingIndex !== -1) {
+          state.jobs[existingIndex] = job;
+        } else {
+          state.jobs.unshift(job);
+        }
         searchMessage.textContent = `${product.name}이 대기열에 추가되었습니다.`;
-        await refreshJobs();
+        renderJobs();
       }
 
       async function printProductNow(product) {
@@ -470,7 +479,7 @@
         renderJobs();
       });
 
-      jobList.addEventListener('click', async (event) => {
+      jobList.addEventListener('click', (event) => {
         const button = event.target.closest('button.qty-btn[data-job-id]');
         if (!button) return;
         const jobId = button.getAttribute('data-job-id');
@@ -478,14 +487,14 @@
         if (!job) return;
         const action = button.getAttribute('data-action');
         const nextQuantity = action === 'inc' ? job.quantity + 1 : job.quantity - 1;
-        await updateJobQuantity(jobId, nextQuantity);
+        updateJobQuantity(jobId, nextQuantity);
       });
 
-      jobList.addEventListener('change', async (event) => {
+      jobList.addEventListener('change', (event) => {
         const input = event.target.closest('input.qty-input[data-job-id]');
         if (!input) return;
         const jobId = input.getAttribute('data-job-id');
-        await updateJobQuantity(jobId, input.value);
+        updateJobQuantity(jobId, input.value);
       });
 
       const savedViewMode = localStorage.getItem('viewMode');

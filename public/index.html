@@ -67,6 +67,8 @@
       .queue-toolbar button{width:auto; flex:1; padding:9px 4px; font-size:12.5px; white-space:nowrap;}
       .log-actions{display:flex; justify-content:flex-end; margin-top:8px;}
       .log-actions button{width:auto; padding:7px 14px; font-size:13px;}
+      .log-toolbar{display:flex; gap:8px; flex-shrink:0;}
+      .log-toolbar button{width:auto; padding:7px 14px; font-size:13px;}
       @media (max-width:800px){.grid{grid-template-columns:1fr;}}
 
       body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
@@ -116,7 +118,13 @@
         </div>
       </div>
       <div class="card">
-        <h2>출력 로그</h2>
+        <div class="row">
+          <h2>출력 로그</h2>
+          <div class="log-toolbar">
+            <button id="toggleLogsButton" class="ghost" type="button">접기</button>
+            <button id="clearLogsButton" class="ghost" type="button">초기화</button>
+          </div>
+        </div>
         <div id="logList"></div>
       </div>
     </div>
@@ -133,7 +141,9 @@
       const printAllButton = document.getElementById('printAllButton');
       const viewPcButton = document.getElementById('viewPcButton');
       const viewMobileButton = document.getElementById('viewMobileButton');
-      const state = { jobs: [], products: [], logs: [], searched: false, selectedJobs: new Set() };
+      const toggleLogsButton = document.getElementById('toggleLogsButton');
+      const clearLogsButton = document.getElementById('clearLogsButton');
+      const state = { jobs: [], products: [], logs: [], searched: false, selectedJobs: new Set(), logsCollapsed: false };
 
       function applyViewMode(mode) {
         const isMobile = mode === 'mobile';
@@ -495,6 +505,20 @@
         if (!input) return;
         const jobId = input.getAttribute('data-job-id');
         updateJobQuantity(jobId, input.value);
+      });
+
+      toggleLogsButton.addEventListener('click', () => {
+        state.logsCollapsed = !state.logsCollapsed;
+        toggleLogsButton.textContent = state.logsCollapsed ? '펼치기' : '접기';
+        logList.style.display = state.logsCollapsed ? 'none' : '';
+      });
+
+      clearLogsButton.addEventListener('click', async () => {
+        if (!state.logs.length) return;
+        if (!window.confirm('출력 로그를 모두 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+        await fetch('/api/logs', { method: 'DELETE' });
+        state.logs = [];
+        renderLogs();
       });
 
       const savedViewMode = localStorage.getItem('viewMode');

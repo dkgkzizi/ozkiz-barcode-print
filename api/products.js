@@ -19,6 +19,32 @@ function escapeRegex(token) {
   return token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+async function fetchProductByBarcode(barcode) {
+  return withClient(async (client) => {
+    const result = await client.query(
+      `SELECT
+        "고유키" AS id,
+        "상품명" AS name,
+        "바코드" AS barcode,
+        "상품코드" AS sku,
+        "옵션" AS option
+      FROM public.products
+      WHERE "바코드" = $1
+      ORDER BY "업로드일시" DESC
+      LIMIT 5`,
+      [barcode]
+    );
+
+    return (result.rows || []).map((row) => ({
+      id: row.id || '',
+      name: row.name || '',
+      barcode: row.barcode || '',
+      sku: row.sku || '',
+      option: row.option || ''
+    }));
+  });
+}
+
 async function fetchProductsFromSupabase(query) {
   const tokens = buildSearchTokens(query);
   if (!tokens.length) {
@@ -73,6 +99,18 @@ async function fetchProductsFromSupabase(query) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const barcode = String(req.query.barcode || '').trim();
+  if (barcode) {
+    try {
+      const products = await fetchProductByBarcode(barcode);
+      res.status(200).json({ products, source: products.length ? 'supabase' : 'none' });
+    } catch (error) {
+      console.error('Supabase barcode lookup failed:', error.message);
+      res.status(200).json({ products: [], source: 'none' });
+    }
     return;
   }
 

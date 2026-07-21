@@ -79,8 +79,14 @@
       body.force-mobile h2{font-size:17px;}
       body.force-mobile .product-actions .add-btn{flex:0 0 52px; font-size:18px;}
       body.force-mobile .small{font-size:13px;}
+      .scan-card{display:none;}
+      body.force-mobile .scan-card{display:block;}
+      #scanVideo{width:100%; border-radius:12px; background:#000; display:block;}
+      .scan-actions{display:flex; gap:8px; margin-top:10px;}
+      .scan-actions button{width:auto; flex:1;}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
   </head>
   <body>
     <div class="wrap">
@@ -93,6 +99,18 @@
           <button type="button" id="viewPcButton" class="view-btn">PC 버전</button>
           <button type="button" id="viewMobileButton" class="view-btn">모바일 버전</button>
         </div>
+      </div>
+
+      <div class="card scan-card">
+        <h2>바코드 스캔</h2>
+        <button id="startScanButton" type="button">카메라로 바코드 스캔</button>
+        <div id="scanVideoWrap" style="display:none; margin-top:10px;">
+          <video id="scanVideo" playsinline autoplay muted></video>
+          <div class="scan-actions">
+            <button id="stopScanButton" class="ghost" type="button">스캔 중지</button>
+          </div>
+        </div>
+        <p id="scanMessage" class="small"></p>
       </div>
 
       <div class="grid">
@@ -145,6 +163,12 @@
       const printAllButton = document.getElementById('printAllButton');
       const deleteSelectedButton = document.getElementById('deleteSelectedButton');
       const deleteAllButton = document.getElementById('deleteAllButton');
+      const startScanButton = document.getElementById('startScanButton');
+      const stopScanButton = document.getElementById('stopScanButton');
+      const scanVideoWrap = document.getElementById('scanVideoWrap');
+      const scanVideo = document.getElementById('scanVideo');
+      const scanMessage = document.getElementById('scanMessage');
+      let barcodeReader = null;
       const viewPcButton = document.getElementById('viewPcButton');
       const viewMobileButton = document.getElementById('viewMobileButton');
       const toggleLogsButton = document.getElementById('toggleLogsButton');
@@ -158,6 +182,7 @@
         viewPcButton.classList.toggle('active', !isMobile);
         viewMobileButton.classList.toggle('active', isMobile);
         localStorage.setItem('viewMode', mode);
+        if (!isMobile) stopScan();
       }
 
       viewPcButton.addEventListener('click', () => applyViewMode('pc'));
@@ -329,6 +354,59 @@
         }
         searchMessage.textContent = `${product.name}이 대기열에 추가되었습니다.`;
         renderJobs();
+      }
+
+      async function handleScannedBarcode(barcode) {
+        scanMessage.textContent = `스캔됨: ${barcode} — 상품 조회 중...`;
+        try {
+          const response = await fetch(`/api/products?barcode=${encodeURIComponent(barcode)}`);
+          const data = await response.json();
+          const product = (data.products || [])[0];
+          if (!product) {
+            scanMessage.textContent = `일치하는 상품을 찾지 못했습니다: ${barcode}`;
+            return;
+          }
+          await addProductToQueue(product);
+          scanMessage.textContent = `${product.name} (${product.option || '-'}) 대기열에 추가됨. 계속 스캔하세요.`;
+        } catch (error) {
+          scanMessage.textContent = '상품 조회 중 오류가 발생했습니다.';
+        }
+      }
+
+      let scanBusy = false;
+
+      async function startScan() {
+        if (barcodeReader) return;
+        scanMessage.textContent = '카메라를 켜는 중...';
+        scanVideoWrap.style.display = '';
+        startScanButton.style.display = 'none';
+
+        try {
+          barcodeReader = new ZXing.BrowserMultiFormatReader();
+          await barcodeReader.decodeFromConstraints(
+            { video: { facingMode: { ideal: 'environment' } } },
+            scanVideo,
+            async (result) => {
+              if (!result || scanBusy) return;
+              scanBusy = true;
+              await handleScannedBarcode(result.getText());
+              setTimeout(() => { scanBusy = false; }, 1500);
+            }
+          );
+          scanMessage.textContent = '바코드를 카메라에 비춰주세요.';
+        } catch (error) {
+          scanMessage.textContent = '카메라를 사용할 수 없습니다: ' + error.message;
+          stopScan();
+        }
+      }
+
+      function stopScan() {
+        if (barcodeReader) {
+          barcodeReader.reset();
+          barcodeReader = null;
+        }
+        scanVideoWrap.style.display = 'none';
+        startScanButton.style.display = '';
       }
 
       async function printProductNow(product) {
@@ -544,6 +622,9 @@
         state.selectedJobs.clear();
         await refreshJobs();
       });
+
+      startScanButton.addEventListener('click', startScan);
+      stopScanButton.addEventListener('click', stopScan);
 
       jobList.addEventListener('change', (event) => {
         const checkbox = event.target.closest('input[type="checkbox"][data-job-id]');

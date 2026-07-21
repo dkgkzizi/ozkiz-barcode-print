@@ -43,6 +43,7 @@
       label{display:block; margin-bottom:8px; font-weight:600; color:var(--ozkiz-text);}
       input, textarea, select, button{width:100%; padding:12px; border-radius:12px; border:1px solid var(--ozkiz-line); font-size:15px; font-family:inherit;}
       input, select{background:#fff; color:var(--ozkiz-text);}
+      input[type="checkbox"]{width:16px; height:16px; padding:0; flex:0 0 16px; accent-color:var(--ozkiz-orange); cursor:pointer;}
       button{cursor:pointer; background:var(--ozkiz-orange); color:white; font-weight:700; border:none; transition:transform .05s ease, background .15s ease;}
       button:hover{background:var(--ozkiz-orange-dark);}
       button:active{transform:scale(0.98);}
@@ -56,7 +57,18 @@
       .product-actions{display:flex; gap:8px; margin-top:8px;}
       .product-actions .print-btn{flex:1;}
       .product-actions .add-btn{flex:0 0 44px; padding:12px 0; font-size:16px; font-weight:800;}
-      .small{font-size:14px; color:var(--ozkiz-muted);}
+      .small{font-size:13px; color:var(--ozkiz-muted);}
+      .job-top{display:flex; align-items:center; gap:8px;}
+      .job-top strong{font-size:15px; font-weight:700; letter-spacing:-0.2px;}
+      .job-status{margin-left:auto; flex:0 0 auto; width:auto; padding:3px 10px; font-size:11px; font-weight:700; border-radius:999px; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
+      .job-note{margin-top:4px;}
+      .qty-row{display:flex; align-items:center; gap:8px; margin-top:10px;}
+      .qty-btn{width:32px; height:32px; flex:0 0 32px; padding:0; border-radius:10px; font-size:17px; font-weight:800; line-height:1; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
+      .qty-btn:hover{background:#ffd0dd;}
+      .qty-input{width:48px; flex:0 0 48px; padding:6px 4px; text-align:center; font-weight:700;}
+      .qty-time{margin-left:auto; flex:0 0 auto;}
+      .job-actions{display:flex; gap:8px; margin-top:10px;}
+      .job-actions button{width:auto; padding:8px 14px; font-size:13px;}
       @media (max-width:800px){.grid{grid-template-columns:1fr;}}
 
       body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
@@ -165,6 +177,12 @@
         `).join('');
       }
 
+      function statusLabel(status) {
+        if (status === 'printing') return '출력중';
+        if (status === 'pending') return '대기중';
+        return status;
+      }
+
       function renderJobs() {
         if (!state.jobs.length) {
           jobList.innerHTML = '<div class="job"><div class="small">대기 중인 요청이 없습니다.</div></div>';
@@ -176,19 +194,35 @@
           const isSelected = state.selectedJobs.has(job.id);
           return `
           <div class="job" style="border-color:${isSelected ? '#ff6a3d' : '#ffe1d2'};">
-            <div class="row"><label><input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} /> <strong>${job.barcode}</strong></label><span>${job.status}</span></div>
-            <div class="small">수량: ${job.quantity} / 소스: ${job.source}</div>
-            ${job.note ? `<div class="small">메모: ${job.note}</div>` : ''}
-            <div class="row" style="margin-top:8px; gap:8px;">
-              <span class="small">${new Date(job.createdAt).toLocaleString()}</span>
-              <div style="display:flex;gap:8px;">
-                <button class="secondary" type="button" onclick="printJob('${job.id}')">출력</button>
-                <button class="secondary" type="button" onclick="deleteJob('${job.id}')">삭제</button>
-              </div>
+            <div class="job-top">
+              <input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} />
+              <strong>${job.barcode}</strong>
+              <span class="job-status">${statusLabel(job.status)}</span>
+            </div>
+            ${job.note ? `<div class="small job-note">${job.note}</div>` : ''}
+            <div class="qty-row">
+              <button type="button" class="qty-btn" data-action="dec" data-job-id="${job.id}">−</button>
+              <input type="number" class="qty-input" data-job-id="${job.id}" value="${job.quantity}" min="1" inputmode="numeric" />
+              <button type="button" class="qty-btn" data-action="inc" data-job-id="${job.id}">+</button>
+              <span class="small qty-time">${new Date(job.createdAt).toLocaleString()}</span>
+            </div>
+            <div class="job-actions">
+              <button type="button" onclick="printJob('${job.id}')">출력</button>
+              <button type="button" class="ghost" onclick="deleteJob('${job.id}')">삭제</button>
             </div>
           </div>
         `;
         }).join('');
+      }
+
+      async function updateJobQuantity(jobId, quantity) {
+        const safeQuantity = Math.max(1, Math.floor(Number(quantity)) || 1);
+        await fetch(`/api/jobs/${jobId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'setQuantity', quantity: safeQuantity })
+        });
+        await refreshJobs();
       }
 
       function renderProducts() {
@@ -421,6 +455,24 @@
           state.selectedJobs.delete(jobId);
         }
         renderJobs();
+      });
+
+      jobList.addEventListener('click', async (event) => {
+        const button = event.target.closest('button.qty-btn[data-job-id]');
+        if (!button) return;
+        const jobId = button.getAttribute('data-job-id');
+        const job = state.jobs.find((item) => item.id === jobId);
+        if (!job) return;
+        const action = button.getAttribute('data-action');
+        const nextQuantity = action === 'inc' ? job.quantity + 1 : job.quantity - 1;
+        await updateJobQuantity(jobId, nextQuantity);
+      });
+
+      jobList.addEventListener('change', async (event) => {
+        const input = event.target.closest('input.qty-input[data-job-id]');
+        if (!input) return;
+        const jobId = input.getAttribute('data-job-id');
+        await updateJobQuantity(jobId, input.value);
       });
 
       const savedViewMode = localStorage.getItem('viewMode');

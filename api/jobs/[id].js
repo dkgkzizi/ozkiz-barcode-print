@@ -18,6 +18,19 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (payload.action === 'setQuantity') {
+      const quantity = Math.max(1, Math.floor(Number(payload.quantity)) || 1);
+      const result = await withClient((client) =>
+        client.query(`UPDATE public.print_jobs SET quantity = $2 WHERE id = $1`, [id, quantity])
+      );
+      if (result.rowCount === 0) {
+        res.status(404).json({ error: 'Job not found' });
+        return;
+      }
+      res.status(200).json({ ok: true, quantity });
+      return;
+    }
+
     if (payload.action === 'printed') {
       const moved = await withClient(async (client) => {
         const found = await client.query(`SELECT * FROM public.print_jobs WHERE id = $1`, [id]);

@@ -382,11 +382,32 @@
         startScanButton.style.display = 'none';
 
         try {
-          barcodeReader = new ZXing.BrowserMultiFormatReader();
+          const hints = new Map();
+          hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+            ZXing.BarcodeFormat.CODE_128,
+            ZXing.BarcodeFormat.CODE_39,
+            ZXing.BarcodeFormat.EAN_13,
+            ZXing.BarcodeFormat.EAN_8,
+            ZXing.BarcodeFormat.UPC_A
+          ]);
+          hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+          barcodeReader = new ZXing.BrowserMultiFormatReader(hints, 150);
+
+          let attempts = 0;
           await barcodeReader.decodeFromConstraints(
-            { video: { facingMode: { ideal: 'environment' } } },
+            {
+              video: {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+              }
+            },
             scanVideo,
             async (result) => {
+              attempts += 1;
+              if (!scanBusy) {
+                scanMessage.textContent = `바코드를 카메라에 비춰주세요. (스캔 시도 ${attempts}회)`;
+              }
               if (!result || scanBusy) return;
               scanBusy = true;
               await handleScannedBarcode(result.getText());

@@ -81,7 +81,7 @@
       body.force-mobile .small{font-size:13px;}
       .scan-card{display:none;}
       body.force-mobile .scan-card{display:block;}
-      .scan-frame{position:relative; width:100%; max-width:340px; margin:0 auto;}
+      .scan-frame{position:relative; width:100%; max-width:220px; margin:0 auto;}
       #scanVideo{width:100%; border-radius:12px; background:#000; display:block;}
       #scanOverlay{position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;}
       .scan-actions{display:flex; gap:8px; margin-top:10px;}
@@ -391,7 +391,7 @@
         ctx.clearRect(0, 0, scanOverlay.width, scanOverlay.height);
       }
 
-      function drawScanOverlayAndPickTarget(barcodes) {
+      function drawScanOverlayAndPickTarget(barcodes, preferredValue) {
         const displayWidth = scanVideo.clientWidth;
         const displayHeight = scanVideo.clientHeight;
         if (scanOverlay.width !== displayWidth) scanOverlay.width = displayWidth;
@@ -406,20 +406,30 @@
         const scaleY = displayHeight / scanVideo.videoHeight;
         const centerX = scanVideo.videoWidth / 2;
         const centerY = scanVideo.videoHeight / 2;
+        const maxEligibleDist = Math.min(scanVideo.videoWidth, scanVideo.videoHeight) * 0.18;
 
-        const maxEligibleDist = Math.min(scanVideo.videoWidth, scanVideo.videoHeight) * 0.35;
+        let target = null;
 
-        let closest = null;
-        let closestDist = Infinity;
-        for (const barcode of barcodes) {
-          const box = barcode.boundingBox;
-          const dist = Math.hypot((box.x + box.width / 2) - centerX, (box.y + box.height / 2) - centerY);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closest = barcode;
+        if (preferredValue) {
+          const held = barcodes.find((b) => b.rawValue === preferredValue);
+          if (held) {
+            const box = held.boundingBox;
+            const dist = Math.hypot((box.x + box.width / 2) - centerX, (box.y + box.height / 2) - centerY);
+            if (dist <= maxEligibleDist * 1.6) target = held;
           }
         }
-        const target = closest && closestDist <= maxEligibleDist ? closest : null;
+
+        if (!target) {
+          let closestDist = Infinity;
+          for (const barcode of barcodes) {
+            const box = barcode.boundingBox;
+            const dist = Math.hypot((box.x + box.width / 2) - centerX, (box.y + box.height / 2) - centerY);
+            if (dist <= maxEligibleDist && dist < closestDist) {
+              closestDist = dist;
+              target = barcode;
+            }
+          }
+        }
 
         barcodes.forEach((barcode) => {
           const box = barcode.boundingBox;
@@ -470,7 +480,7 @@
           if (!nativeScanActive) return;
           try {
             const barcodes = await detector.detect(scanVideo);
-            const target = drawScanOverlayAndPickTarget(barcodes);
+            const target = drawScanOverlayAndPickTarget(barcodes, lockValue);
 
             if (!target) {
               lockValue = null;
@@ -533,6 +543,7 @@
 
       async function startScan() {
         if (barcodeReader || nativeScanActive) return;
+        scanBusy = false;
         scanMessage.textContent = '카메라를 켜는 중...';
         scanVideoWrap.style.display = '';
         startScanButton.style.display = 'none';

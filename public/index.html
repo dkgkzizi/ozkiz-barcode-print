@@ -473,26 +473,33 @@
         nativeScanActive = true;
 
         const LOCK_DURATION_MS = 1000;
+        const LOCK_GRACE_MS = 500;
         let lockValue = null;
         let lockStartedAt = 0;
+        let lastSeenAt = 0;
+        let lastTarget = null;
 
         const tick = async () => {
           if (!nativeScanActive) return;
           try {
             const barcodes = await detector.detect(scanVideo);
             const target = drawScanOverlayAndPickTarget(barcodes, lockValue);
+            const now = Date.now();
 
-            if (!target) {
-              lockValue = null;
-              if (!scanBusy) {
-                scanMessage.textContent = '가운데 초록 박스에 바코드를 맞춰주세요.';
-              }
-            } else {
+            if (target) {
               if (lockValue !== target.rawValue) {
                 lockValue = target.rawValue;
-                lockStartedAt = Date.now();
+                lockStartedAt = now;
               }
-              const remainingMs = LOCK_DURATION_MS - (Date.now() - lockStartedAt);
+              lastSeenAt = now;
+              lastTarget = target;
+            } else if (lockValue && now - lastSeenAt > LOCK_GRACE_MS) {
+              lockValue = null;
+              lastTarget = null;
+            }
+
+            if (lockValue) {
+              const remainingMs = LOCK_DURATION_MS - (now - lockStartedAt);
               if (!scanBusy) {
                 scanMessage.textContent = remainingMs > 0
                   ? `바코드 고정됨 — 위치가 다르면 옮겨주세요 (${Math.ceil(remainingMs / 1000)}초 후 스캔)`
@@ -500,13 +507,18 @@
               }
               if (remainingMs <= 0 && !scanBusy) {
                 scanBusy = true;
+                const finalValue = lockValue;
+                const finalTarget = lastTarget;
                 lockValue = null;
+                lastTarget = null;
                 scanMessage.textContent = '스캔 완료!';
-                freezeOverlayWithCapture(target);
-                await new Promise((resolve) => setTimeout(resolve, 450));
-                await handleScannedBarcode(target.rawValue);
+                if (finalTarget) freezeOverlayWithCapture(finalTarget);
+                await new Promise((resolve) => setTimeout(resolve, 350));
+                await handleScannedBarcode(finalValue);
                 return;
               }
+            } else if (!scanBusy) {
+              scanMessage.textContent = '가운데 초록 박스에 바코드를 맞춰주세요.';
             }
           } catch (error) {
             // ignore transient per-frame detection errors

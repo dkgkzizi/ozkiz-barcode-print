@@ -83,7 +83,7 @@
       body.force-mobile .scan-card{display:block;}
       .scan-frame{position:relative; width:100%;}
       #scanVideo{width:100%; border-radius:12px; background:#000; display:block;}
-      .scan-guide{position:absolute; left:8%; right:8%; top:42%; height:16%; border:2px solid var(--ozkiz-orange); border-radius:8px; box-shadow:0 0 0 999px rgba(0,0,0,0.25); pointer-events:none;}
+      #scanOverlay{position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;}
       .scan-actions{display:flex; gap:8px; margin-top:10px;}
       .scan-actions button{width:auto; flex:1;}
     </style>
@@ -109,7 +109,7 @@
         <div id="scanVideoWrap" style="display:none; margin-top:10px;">
           <div class="scan-frame">
             <video id="scanVideo" playsinline autoplay muted></video>
-            <div class="scan-guide"></div>
+            <canvas id="scanOverlay"></canvas>
           </div>
           <div class="scan-actions">
             <button id="stopScanButton" class="ghost" type="button">스캔 중지</button>
@@ -172,6 +172,7 @@
       const stopScanButton = document.getElementById('stopScanButton');
       const scanVideoWrap = document.getElementById('scanVideoWrap');
       const scanVideo = document.getElementById('scanVideo');
+      const scanOverlay = document.getElementById('scanOverlay');
       const scanMessage = document.getElementById('scanMessage');
       let barcodeReader = null;
       const viewPcButton = document.getElementById('viewPcButton');
@@ -385,6 +386,49 @@
       let scanStream = null;
       let nativeScanActive = false;
 
+      function clearScanOverlay() {
+        const ctx = scanOverlay.getContext('2d');
+        ctx.clearRect(0, 0, scanOverlay.width, scanOverlay.height);
+      }
+
+      function drawScanOverlayAndPickTarget(barcodes) {
+        const displayWidth = scanVideo.clientWidth;
+        const displayHeight = scanVideo.clientHeight;
+        if (scanOverlay.width !== displayWidth) scanOverlay.width = displayWidth;
+        if (scanOverlay.height !== displayHeight) scanOverlay.height = displayHeight;
+
+        const ctx = scanOverlay.getContext('2d');
+        ctx.clearRect(0, 0, scanOverlay.width, scanOverlay.height);
+
+        if (!barcodes.length || !scanVideo.videoWidth) return null;
+
+        const scaleX = displayWidth / scanVideo.videoWidth;
+        const scaleY = displayHeight / scanVideo.videoHeight;
+        const centerX = scanVideo.videoWidth / 2;
+        const centerY = scanVideo.videoHeight / 2;
+
+        let target = null;
+        let targetDist = Infinity;
+        for (const barcode of barcodes) {
+          const box = barcode.boundingBox;
+          const dist = Math.hypot((box.x + box.width / 2) - centerX, (box.y + box.height / 2) - centerY);
+          if (dist < targetDist) {
+            targetDist = dist;
+            target = barcode;
+          }
+        }
+
+        barcodes.forEach((barcode) => {
+          const box = barcode.boundingBox;
+          const isTarget = barcode === target;
+          ctx.strokeStyle = isTarget ? '#22c55e' : 'rgba(255,255,255,0.5)';
+          ctx.lineWidth = isTarget ? 3 : 1.5;
+          ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+        });
+
+        return target;
+      }
+
       async function startNativeDetection() {
         let formats;
         try {
@@ -401,13 +445,14 @@
           if (!nativeScanActive) return;
           attempts += 1;
           if (!scanBusy) {
-            scanMessage.textContent = `바코드를 카메라에 비춰주세요. (스캔 시도 ${attempts}회)`;
+            scanMessage.textContent = `가운데 초록 박스로 잡힌 바코드가 스캔됩니다. (스캔 시도 ${attempts}회)`;
           }
           try {
             const barcodes = await detector.detect(scanVideo);
-            if (barcodes.length && !scanBusy) {
+            const target = drawScanOverlayAndPickTarget(barcodes);
+            if (target && !scanBusy) {
               scanBusy = true;
-              await handleScannedBarcode(barcodes[0].rawValue);
+              await handleScannedBarcode(target.rawValue);
               setTimeout(() => { scanBusy = false; }, 1500);
             }
           } catch (error) {
@@ -483,6 +528,7 @@
           scanStream = null;
         }
         scanVideo.srcObject = null;
+        clearScanOverlay();
         scanVideoWrap.style.display = 'none';
         startScanButton.style.display = '';
       }

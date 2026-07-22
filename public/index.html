@@ -376,7 +376,8 @@
           utterance.lang = 'ko-KR';
           const koreanVoice = cachedVoices.find((v) => v.lang && v.lang.startsWith('ko'));
           if (koreanVoice) utterance.voice = koreanVoice;
-          utterance.pitch = 1.1;
+          utterance.pitch = 1.4;
+          utterance.rate = 0.9;
           window.speechSynthesis.cancel();
           window.speechSynthesis.speak(utterance);
         } catch (error) {

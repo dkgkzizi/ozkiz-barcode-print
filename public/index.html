@@ -81,7 +81,7 @@
       body.force-mobile .small{font-size:13px;}
       .scan-card{display:none;}
       body.force-mobile .scan-card{display:block;}
-      .scan-frame{position:relative; width:100%;}
+      .scan-frame{position:relative; width:100%; max-width:340px; margin:0 auto;}
       #scanVideo{width:100%; border-radius:12px; background:#000; display:block;}
       #scanOverlay{position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;}
       .scan-actions{display:flex; gap:8px; margin-top:10px;}
@@ -407,16 +407,19 @@
         const centerX = scanVideo.videoWidth / 2;
         const centerY = scanVideo.videoHeight / 2;
 
-        let target = null;
-        let targetDist = Infinity;
+        const maxEligibleDist = Math.min(scanVideo.videoWidth, scanVideo.videoHeight) * 0.35;
+
+        let closest = null;
+        let closestDist = Infinity;
         for (const barcode of barcodes) {
           const box = barcode.boundingBox;
           const dist = Math.hypot((box.x + box.width / 2) - centerX, (box.y + box.height / 2) - centerY);
-          if (dist < targetDist) {
-            targetDist = dist;
-            target = barcode;
+          if (dist < closestDist) {
+            closestDist = dist;
+            closest = barcode;
           }
         }
+        const target = closest && closestDist <= maxEligibleDist ? closest : null;
 
         barcodes.forEach((barcode) => {
           const box = barcode.boundingBox;
@@ -427,6 +430,25 @@
         });
 
         return target;
+      }
+
+      function freezeOverlayWithCapture(target) {
+        const displayWidth = scanOverlay.width;
+        const displayHeight = scanOverlay.height;
+        const ctx = scanOverlay.getContext('2d');
+        ctx.clearRect(0, 0, displayWidth, displayHeight);
+        ctx.drawImage(scanVideo, 0, 0, displayWidth, displayHeight);
+
+        if (scanVideo.videoWidth) {
+          const scaleX = displayWidth / scanVideo.videoWidth;
+          const scaleY = displayHeight / scanVideo.videoHeight;
+          const box = target.boundingBox;
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+        }
+
+        scanVideo.pause();
       }
 
       async function startNativeDetection() {
@@ -469,8 +491,11 @@
               if (remainingMs <= 0 && !scanBusy) {
                 scanBusy = true;
                 lockValue = null;
+                scanMessage.textContent = '스캔 완료!';
+                freezeOverlayWithCapture(target);
+                await new Promise((resolve) => setTimeout(resolve, 450));
                 await handleScannedBarcode(target.rawValue);
-                setTimeout(() => { scanBusy = false; }, 1500);
+                return;
               }
             }
           } catch (error) {

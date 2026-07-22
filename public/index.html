@@ -472,7 +472,7 @@
         const detector = new window.BarcodeDetector(formats && formats.length ? { formats } : undefined);
         nativeScanActive = true;
 
-        const LOCK_DURATION_MS = 3000;
+        const LOCK_DURATION_MS = 1000;
         let lockValue = null;
         let lockStartedAt = 0;
 

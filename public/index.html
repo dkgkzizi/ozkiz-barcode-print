@@ -369,12 +369,15 @@
           const product = (data.products || [])[0];
           if (!product) {
             scanMessage.textContent = `일치하는 상품을 찾지 못했습니다: ${barcode}`;
+            stopScan();
             return;
           }
           await addProductToQueue(product);
-          scanMessage.textContent = `${product.name} (${product.option || '-'}) 대기열에 추가됨. 계속 스캔하세요.`;
+          scanMessage.textContent = `${product.name} (${product.option || '-'}) 대기열에 추가되었습니다.`;
+          stopScan();
         } catch (error) {
           scanMessage.textContent = '상품 조회 중 오류가 발생했습니다.';
+          stopScan();
         }
       }
 

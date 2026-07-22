@@ -439,21 +439,39 @@
         }
         const detector = new window.BarcodeDetector(formats && formats.length ? { formats } : undefined);
         nativeScanActive = true;
-        let attempts = 0;
+
+        const LOCK_DURATION_MS = 3000;
+        let lockValue = null;
+        let lockStartedAt = 0;
 
         const tick = async () => {
           if (!nativeScanActive) return;
-          attempts += 1;
-          if (!scanBusy) {
-            scanMessage.textContent = `가운데 초록 박스로 잡힌 바코드가 스캔됩니다. (스캔 시도 ${attempts}회)`;
-          }
           try {
             const barcodes = await detector.detect(scanVideo);
             const target = drawScanOverlayAndPickTarget(barcodes);
-            if (target && !scanBusy) {
-              scanBusy = true;
-              await handleScannedBarcode(target.rawValue);
-              setTimeout(() => { scanBusy = false; }, 1500);
+
+            if (!target) {
+              lockValue = null;
+              if (!scanBusy) {
+                scanMessage.textContent = '가운데 초록 박스에 바코드를 맞춰주세요.';
+              }
+            } else {
+              if (lockValue !== target.rawValue) {
+                lockValue = target.rawValue;
+                lockStartedAt = Date.now();
+              }
+              const remainingMs = LOCK_DURATION_MS - (Date.now() - lockStartedAt);
+              if (!scanBusy) {
+                scanMessage.textContent = remainingMs > 0
+                  ? `바코드 고정됨 — 위치가 다르면 옮겨주세요 (${Math.ceil(remainingMs / 1000)}초 후 스캔)`
+                  : '스캔 중...';
+              }
+              if (remainingMs <= 0 && !scanBusy) {
+                scanBusy = true;
+                lockValue = null;
+                await handleScannedBarcode(target.rawValue);
+                setTimeout(() => { scanBusy = false; }, 1500);
+              }
             }
           } catch (error) {
             // ignore transient per-frame detection errors

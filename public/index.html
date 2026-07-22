@@ -81,7 +81,9 @@
       body.force-mobile .small{font-size:13px;}
       .scan-card{display:none;}
       body.force-mobile .scan-card{display:block;}
+      .scan-frame{position:relative; width:100%;}
       #scanVideo{width:100%; border-radius:12px; background:#000; display:block;}
+      .scan-guide{position:absolute; left:8%; right:8%; top:42%; height:16%; border:2px solid var(--ozkiz-orange); border-radius:8px; box-shadow:0 0 0 999px rgba(0,0,0,0.25); pointer-events:none;}
       .scan-actions{display:flex; gap:8px; margin-top:10px;}
       .scan-actions button{width:auto; flex:1;}
     </style>
@@ -105,7 +107,10 @@
         <h2>바코드 스캔</h2>
         <button id="startScanButton" type="button">카메라로 바코드 스캔</button>
         <div id="scanVideoWrap" style="display:none; margin-top:10px;">
-          <video id="scanVideo" playsinline autoplay muted></video>
+          <div class="scan-frame">
+            <video id="scanVideo" playsinline autoplay muted></video>
+            <div class="scan-guide"></div>
+          </div>
           <div class="scan-actions">
             <button id="stopScanButton" class="ghost" type="button">스캔 중지</button>
           </div>
@@ -374,46 +379,89 @@
       }
 
       let scanBusy = false;
+      let scanStream = null;
+      let nativeScanActive = false;
+
+      async function startNativeDetection() {
+        let formats;
+        try {
+          const supported = await window.BarcodeDetector.getSupportedFormats();
+          formats = ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e'].filter((f) => supported.includes(f));
+        } catch (error) {
+          formats = undefined;
+        }
+        const detector = new window.BarcodeDetector(formats && formats.length ? { formats } : undefined);
+        nativeScanActive = true;
+        let attempts = 0;
+
+        const tick = async () => {
+          if (!nativeScanActive) return;
+          attempts += 1;
+          if (!scanBusy) {
+            scanMessage.textContent = `바코드를 카메라에 비춰주세요. (스캔 시도 ${attempts}회)`;
+          }
+          try {
+            const barcodes = await detector.detect(scanVideo);
+            if (barcodes.length && !scanBusy) {
+              scanBusy = true;
+              await handleScannedBarcode(barcodes[0].rawValue);
+              setTimeout(() => { scanBusy = false; }, 1500);
+            }
+          } catch (error) {
+            // ignore transient per-frame detection errors
+          }
+          if (nativeScanActive) requestAnimationFrame(tick);
+        };
+        tick();
+      }
+
+      async function startZXingDetection() {
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+          ZXing.BarcodeFormat.CODE_128,
+          ZXing.BarcodeFormat.CODE_39,
+          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.EAN_8,
+          ZXing.BarcodeFormat.UPC_A
+        ]);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        barcodeReader = new ZXing.BrowserMultiFormatReader(hints, 150);
+
+        let attempts = 0;
+        await barcodeReader.decodeFromStream(scanStream, scanVideo, async (result) => {
+          attempts += 1;
+          if (!scanBusy) {
+            scanMessage.textContent = `바코드를 카메라에 비춰주세요. (스캔 시도 ${attempts}회)`;
+          }
+          if (!result || scanBusy) return;
+          scanBusy = true;
+          await handleScannedBarcode(result.getText());
+          setTimeout(() => { scanBusy = false; }, 1500);
+        });
+      }
 
       async function startScan() {
-        if (barcodeReader) return;
+        if (barcodeReader || nativeScanActive) return;
         scanMessage.textContent = '카메라를 켜는 중...';
         scanVideoWrap.style.display = '';
         startScanButton.style.display = 'none';
 
         try {
-          const hints = new Map();
-          hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-            ZXing.BarcodeFormat.CODE_128,
-            ZXing.BarcodeFormat.CODE_39,
-            ZXing.BarcodeFormat.EAN_13,
-            ZXing.BarcodeFormat.EAN_8,
-            ZXing.BarcodeFormat.UPC_A
-          ]);
-          hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-          barcodeReader = new ZXing.BrowserMultiFormatReader(hints, 150);
-
-          let attempts = 0;
-          await barcodeReader.decodeFromConstraints(
-            {
-              video: {
-                facingMode: { ideal: 'environment' },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-              }
-            },
-            scanVideo,
-            async (result) => {
-              attempts += 1;
-              if (!scanBusy) {
-                scanMessage.textContent = `바코드를 카메라에 비춰주세요. (스캔 시도 ${attempts}회)`;
-              }
-              if (!result || scanBusy) return;
-              scanBusy = true;
-              await handleScannedBarcode(result.getText());
-              setTimeout(() => { scanBusy = false; }, 1500);
+          scanStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
             }
-          );
+          });
+          scanVideo.srcObject = scanStream;
+          await scanVideo.play();
+
+          if ('BarcodeDetector' in window) {
+            await startNativeDetection();
+          } else {
+            await startZXingDetection();
+          }
           scanMessage.textContent = '바코드를 카메라에 비춰주세요.';
         } catch (error) {
           scanMessage.textContent = '카메라를 사용할 수 없습니다: ' + error.message;
@@ -422,10 +470,16 @@
       }
 
       function stopScan() {
+        nativeScanActive = false;
         if (barcodeReader) {
           barcodeReader.reset();
           barcodeReader = null;
         }
+        if (scanStream) {
+          scanStream.getTracks().forEach((track) => track.stop());
+          scanStream = null;
+        }
+        scanVideo.srcObject = null;
         scanVideoWrap.style.display = 'none';
         startScanButton.style.display = '';
       }

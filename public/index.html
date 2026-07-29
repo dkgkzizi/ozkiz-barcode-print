@@ -77,7 +77,8 @@
       button.ghost:hover{background:var(--ozkiz-orange-dark);}
       .job, .product {border:1px solid var(--ozkiz-line); border-radius:14px; padding:12px; background:#fafafa; margin-bottom:8px;}
       .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
-      #productResults{max-height:520px; overflow-y:auto; padding-right:4px;}
+      #productResults{max-height:520px; overflow-y:auto; padding-right:4px; min-width:0;}
+      #jobList{max-height:520px; overflow-y:auto; padding-right:4px; min-width:0;}
       #logList{max-height:360px; overflow-y:auto; padding-right:4px;}
       .log-card{display:flex; flex-direction:column;}
       .log-card #logList{flex:1; min-height:0; max-height:640px;}
@@ -97,10 +98,16 @@
       .qty-time{margin-left:auto; flex:0 0 auto;}
       .job-actions{display:flex; gap:8px; margin-top:10px;}
       .job-actions button{width:auto; padding:6px 12px; font-size:12px;}
-      .queue-toolbar{display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-bottom:8px;}
-      .queue-toolbar button{width:100%; padding:9px 4px; font-size:12px; white-space:nowrap;}
-      .queue-reset{display:flex; justify-content:center; margin-bottom:8px;}
-      .queue-reset button{width:auto; padding:9px 32px; font-size:12px;}
+      .search-split{display:grid; grid-template-columns:200px 1fr; gap:20px; align-items:start;}
+      .search-controls{display:flex; flex-direction:column; gap:10px;}
+      .search-controls label{margin-bottom:0;}
+      .queue-split{display:grid; grid-template-columns:160px 1fr; gap:20px; align-items:start;}
+      .queue-controls{display:flex; flex-direction:column; gap:8px;}
+      .queue-controls button{width:100%; padding:9px 6px; font-size:12px; white-space:nowrap;}
+      @media (max-width:900px){
+        .search-split, .queue-split{grid-template-columns:1fr;}
+      }
+      body.force-mobile .search-split, body.force-mobile .queue-split{grid-template-columns:1fr !important;}
       .log-actions{display:flex; justify-content:flex-end; margin-top:8px;}
       .log-actions button{width:auto; padding:7px 14px; font-size:13px;}
       .log-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
@@ -171,13 +178,15 @@
         <div class="grid">
           <div class="card search-card">
             <h2>바코드 스티커 출력</h2>
-            <label>검색어</label>
-            <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
-            <div class="row" style="margin-top:10px;">
-              <button id="searchButton" type="button">검색</button>
+            <div class="search-split">
+              <div class="search-controls">
+                <label>검색어</label>
+                <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
+                <button id="searchButton" type="button">검색</button>
+                <p id="searchMessage" class="small"></p>
+              </div>
+              <div id="productResults"></div>
             </div>
-            <p id="searchMessage" class="small"></p>
-            <div id="productResults"></div>
           </div>
 
           <div class="card log-card">
@@ -194,16 +203,16 @@
 
           <div class="card queue-card">
             <h2>출력 대기열</h2>
-            <div class="queue-toolbar">
-              <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
-              <button id="printAllButton" class="secondary" type="button">전체 출력</button>
-              <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
-              <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+            <div class="queue-split">
+              <div class="queue-controls">
+                <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
+                <button id="printAllButton" class="secondary" type="button">전체 출력</button>
+                <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
+                <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+                <button id="deleteAllButton" class="ghost" type="button">초기화</button>
+              </div>
+              <div id="jobList"></div>
             </div>
-            <div class="queue-reset">
-              <button id="deleteAllButton" class="ghost" type="button">초기화</button>
-            </div>
-            <div id="jobList"></div>
           </div>
         </div>
       </main>

@@ -81,29 +81,27 @@
       button.secondary:hover{background:var(--ozkiz-orange-dark);}
       button.ghost{background:var(--ozkiz-orange);}
       button.ghost:hover{background:var(--ozkiz-orange-dark);}
-      .job, .product {border:1px solid var(--ozkiz-line); border-radius:12px; padding:10px; background:#fafafa; margin-bottom:6px;}
       .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
-      #productResults{max-height:520px; overflow-y:auto; padding-right:4px; min-width:0;}
-      #jobList{max-height:520px; overflow-y:auto; padding-right:4px; min-width:0;}
-      #logList{max-height:360px; overflow-y:auto; padding-right:4px;}
+      #productResults{max-height:520px; overflow-y:auto; min-width:0;}
+      #jobList{max-height:520px; overflow-y:auto; min-width:0;}
+      #logList{max-height:360px; overflow-y:auto;}
       .log-card{display:flex; flex-direction:column;}
       .log-card #logList{flex:1; min-height:0; max-height:640px;}
-      .product{margin-bottom:6px;}
-      .product-actions{display:flex; gap:6px; margin-top:6px;}
-      .product-actions .print-btn{flex:1;}
-      .product-actions .add-btn{flex:0 0 36px; padding:8px 0; font-size:14px; font-weight:800;}
       .small{font-size:12px; color:var(--ozkiz-muted);}
-      .job-top{display:flex; align-items:center; gap:8px;}
-      .job-top strong{font-size:13.5px; font-weight:700; letter-spacing:-0.2px;}
-      .job-status{margin-left:auto; flex:0 0 auto; width:auto; padding:2px 8px; font-size:10px; font-weight:700; border-radius:999px; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark);}
-      .job-note{margin-top:2px;}
-      .qty-row{display:flex; align-items:center; gap:6px; margin-top:6px;}
-      .qty-btn{width:26px; height:26px; flex:0 0 26px; padding:0; border-radius:8px; font-size:14px; font-weight:800; line-height:1; background:var(--ozkiz-orange); color:#fff;}
+      .table-wrap{overflow-x:auto;}
+      .data-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+      .data-table th{text-align:left; font-weight:600; color:var(--ozkiz-muted); font-size:11px; padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); white-space:nowrap;}
+      .data-table td{padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle;}
+      .data-table tr:last-child td{border-bottom:none;}
+      .data-table td.nowrap{white-space:nowrap;}
+      .data-table .name-cell{font-weight:700; color:var(--ozkiz-text);}
+      .job-status{display:inline-block; padding:2px 8px; font-size:10px; font-weight:700; border-radius:999px; background:var(--ozkiz-pink-soft); color:var(--ozkiz-orange-dark); white-space:nowrap;}
+      .row-actions{display:flex; gap:6px; align-items:center;}
+      .row-actions button{width:auto; padding:5px 10px; font-size:11px; white-space:nowrap;}
+      .qty-row{display:flex; align-items:center; gap:4px;}
+      .qty-btn{width:24px; height:24px; flex:0 0 24px; padding:0; border-radius:7px; font-size:13px; font-weight:800; line-height:1; background:var(--ozkiz-orange); color:#fff;}
       .qty-btn:hover{background:var(--ozkiz-orange-dark);}
-      .qty-input{width:38px; flex:0 0 38px; padding:4px; text-align:center; font-weight:700; font-size:13px;}
-      .qty-time{margin-left:auto; flex:0 0 auto;}
-      .job-actions{display:flex; gap:6px; margin-top:6px;}
-      .job-actions button{width:auto; padding:5px 10px; font-size:11px;}
+      .qty-input{width:36px; flex:0 0 36px; padding:3px; text-align:center; font-weight:700; font-size:12px;}
       .search-split{display:grid; grid-template-columns:200px 1fr; gap:20px; align-items:start;}
       .search-controls{display:flex; flex-direction:column; gap:10px; border-right:1px solid var(--ozkiz-line); padding-right:20px;}
       .search-controls label{margin-bottom:0;}
@@ -116,8 +114,6 @@
       }
       body.force-mobile .search-split, body.force-mobile .queue-split{grid-template-columns:1fr !important;}
       body.force-mobile .search-controls, body.force-mobile .queue-controls{border-right:none; border-bottom:1px solid var(--ozkiz-line); padding-right:0; padding-bottom:16px;}
-      .log-actions{display:flex; justify-content:flex-end; margin-top:6px;}
-      .log-actions button{width:auto; padding:6px 12px; font-size:12px;}
       .log-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
       .log-toolbar button{width:auto; padding:7px 14px; font-size:13px;}
       .log-toolbar input[type="date"]{width:auto; padding:6px 10px; font-size:13px;}
@@ -132,7 +128,6 @@
       body.force-mobile .card{padding:16px; border-radius:16px;}
       body.force-mobile input, body.force-mobile select, body.force-mobile button{font-size:16px; padding:14px;}
       body.force-mobile h2{font-size:17px;}
-      body.force-mobile .product-actions .add-btn{flex:0 0 52px; font-size:18px;}
       body.force-mobile .small{font-size:13px;}
       .scan-card{display:none;}
       body.force-mobile .scan-card{display:block;}
@@ -300,21 +295,32 @@
 
       function renderLogs() {
         if (!state.logs.length) {
-          logList.innerHTML = '<div class="job"><div class="small">출력 로그가 없습니다.</div></div>';
+          logList.innerHTML = '';
           return;
         }
 
-        logList.innerHTML = state.logs.map((log) => `
-          <div class="job">
-            <div class="row"><strong>${log.barcode}</strong><span class="job-status">출력 ${log.printCount || 1}회</span></div>
-            <div class="small">${new Date(log.printedAt).toLocaleString()}</div>
-            <div class="small">품번: ${log.sku || '-'} / 옵션: ${log.option || '-'}</div>
-            ${log.note ? `<div class="small">상품명: ${log.note}</div>` : ''}
-            <div class="log-actions">
-              <button type="button" class="ghost" onclick="reprintLog('${log.id}')">재출력</button>
-            </div>
-          </div>
+        const rows = state.logs.map((log) => `
+          <tr>
+            <td class="name-cell nowrap">${log.barcode}</td>
+            <td class="small">${log.note || '-'}${log.option ? ` · ${log.option}` : ''}</td>
+            <td><span class="job-status">출력 ${log.printCount || 1}회</span></td>
+            <td class="small nowrap">${new Date(log.printedAt).toLocaleString()}</td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="ghost" onclick="reprintLog('${log.id}')">재출력</button>
+              </div>
+            </td>
+          </tr>
         `).join('');
+
+        logList.innerHTML = `
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>바코드</th><th>상품명 / 옵션</th><th>횟수</th><th>시간</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
       }
 
       window.reprintLog = async function(logId) {
@@ -351,30 +357,40 @@
           return;
         }
 
-        jobList.innerHTML = state.jobs.map((job) => {
+        const rows = state.jobs.map((job) => {
           const isSelected = state.selectedJobs.has(job.id);
           return `
-          <div class="job" style="border-color:${isSelected ? '#e5152c' : '#e9e6e7'};">
-            <div class="job-top">
-              <input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} />
-              <strong>${job.barcode}</strong>
-              <span class="job-status">${statusLabel(job.status)}</span>
-            </div>
-            ${job.note ? `<div class="small job-note">${job.note}</div>` : ''}
-            ${job.option ? `<div class="small">옵션: ${job.option}</div>` : ''}
-            <div class="qty-row">
-              <button type="button" class="qty-btn" data-action="dec" data-job-id="${job.id}">−</button>
-              <input type="number" class="qty-input" data-job-id="${job.id}" value="${job.quantity}" min="1" inputmode="numeric" />
-              <button type="button" class="qty-btn" data-action="inc" data-job-id="${job.id}">+</button>
-              <span class="small qty-time">${new Date(job.createdAt).toLocaleString()}</span>
-            </div>
-            <div class="job-actions">
-              <button type="button" onclick="printJob('${job.id}')">출력</button>
-              <button type="button" class="ghost" onclick="deleteJob('${job.id}')">삭제</button>
-            </div>
-          </div>
+          <tr style="background:${isSelected ? 'var(--ozkiz-pink-soft)' : 'transparent'};">
+            <td><input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} /></td>
+            <td class="name-cell nowrap">${job.barcode}</td>
+            <td class="small">${job.note || '-'}${job.option ? ` · ${job.option}` : ''}</td>
+            <td>
+              <div class="qty-row">
+                <button type="button" class="qty-btn" data-action="dec" data-job-id="${job.id}">−</button>
+                <input type="number" class="qty-input" data-job-id="${job.id}" value="${job.quantity}" min="1" inputmode="numeric" />
+                <button type="button" class="qty-btn" data-action="inc" data-job-id="${job.id}">+</button>
+              </div>
+            </td>
+            <td><span class="job-status">${statusLabel(job.status)}</span></td>
+            <td class="small nowrap">${new Date(job.createdAt).toLocaleString()}</td>
+            <td>
+              <div class="row-actions">
+                <button type="button" onclick="printJob('${job.id}')">출력</button>
+                <button type="button" class="ghost" onclick="deleteJob('${job.id}')">삭제</button>
+              </div>
+            </td>
+          </tr>
         `;
         }).join('');
+
+        jobList.innerHTML = `
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th></th><th>바코드</th><th>상품명 / 옵션</th><th>수량</th><th>상태</th><th>등록시간</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
       }
 
       function updateJobQuantity(jobId, quantity) {
@@ -395,17 +411,29 @@
           return;
         }
 
-        productResults.innerHTML = state.products.map((product, index) => `
-          <div class="product">
-            <div class="row"><strong>${product.name}</strong><span class="small">${product.barcode || '바코드 없음'}</span></div>
-            <div class="small">SKU: ${product.sku || '-'}</div>
-            <div class="small">옵션: ${product.option || '-'}</div>
-            <div class="product-actions">
-              <button class="print-btn" type="button" data-action="print" data-index="${index}" ${product.barcode ? '' : 'disabled'}>출력</button>
-              <button class="ghost add-btn" type="button" data-action="add" data-index="${index}" ${product.barcode ? '' : 'disabled'} title="대기열에 추가">+</button>
-            </div>
-          </div>
+        const rows = state.products.map((product, index) => `
+          <tr>
+            <td class="name-cell">${product.name}</td>
+            <td class="small">${product.sku || '-'}</td>
+            <td class="small">${product.option || '-'}</td>
+            <td class="small nowrap">${product.barcode || '바코드 없음'}</td>
+            <td>
+              <div class="row-actions">
+                <button type="button" data-action="print" data-index="${index}" ${product.barcode ? '' : 'disabled'}>출력</button>
+                <button class="ghost" type="button" data-action="add" data-index="${index}" ${product.barcode ? '' : 'disabled'} title="대기열에 추가">+</button>
+              </div>
+            </td>
+          </tr>
         `).join('');
+
+        productResults.innerHTML = `
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>상품명</th><th>SKU</th><th>옵션</th><th>바코드</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
       }
 
       async function searchProducts() {

@@ -58,7 +58,7 @@
       h2{font-size:16px; color:var(--ozkiz-text);}
       .grid{
         display:grid; gap:16px;
-        grid-template-columns:2.3fr 1fr;
+        grid-template-columns:2fr 1fr;
         grid-template-areas:"search log" "queue log";
       }
       .grid .search-card{grid-area:search; min-width:0;}
@@ -93,7 +93,7 @@
       .data-table th{text-align:left; font-weight:600; color:var(--ozkiz-muted); font-size:11px; padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); white-space:nowrap;}
       .data-table{table-layout:auto;}
       .data-table td{padding:5px 6px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle; white-space:nowrap;}
-      .data-table td.wrap{white-space:normal; max-width:150px;}
+      .data-table td.wrap{white-space:normal; max-width:175px;}
       .data-table tr:last-child td{border-bottom:none;}
       .data-table td.nowrap{white-space:nowrap;}
       .data-table .name-cell{font-weight:700; color:var(--ozkiz-text);}
@@ -124,7 +124,7 @@
         .log-card #logList{flex:none; max-height:360px;}
       }
 
-      body.force-pc .grid{grid-template-columns:2.3fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
+      body.force-pc .grid{grid-template-columns:2fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
       body.force-mobile .grid{grid-template-columns:1fr !important; grid-template-areas:"search" "queue" "log" !important;}
       body.force-mobile .log-card #logList{flex:none; max-height:360px;}
       body.force-mobile .card{padding:16px; border-radius:16px;}

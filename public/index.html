@@ -306,7 +306,7 @@
             <td class="name-cell nowrap">${log.barcode}</td>
             <td class="small wrap">${log.note || '-'}${log.option ? ` · ${log.option}` : ''}</td>
             <td><span class="job-status">출력 ${log.printCount || 1}회</span></td>
-            <td class="small nowrap">${new Date(log.printedAt).toLocaleString()}</td>
+            <td class="small nowrap">${new Date(log.printedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
             <td>
               <div class="row-actions">
                 <button type="button" class="ghost" onclick="reprintLog('${log.id}')">재출력</button>

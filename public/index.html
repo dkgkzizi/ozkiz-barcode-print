@@ -61,9 +61,9 @@
         grid-template-columns:1.7fr 1fr;
         grid-template-areas:"search log" "queue log";
       }
-      .grid .search-card{grid-area:search;}
-      .grid .log-card{grid-area:log;}
-      .grid .queue-card{grid-area:queue;}
+      .grid .search-card{grid-area:search; min-width:0;}
+      .grid .log-card{grid-area:log; min-width:0;}
+      .grid .queue-card{grid-area:queue; min-width:0;}
       .grid .card{margin-bottom:0;}
       label{display:block; margin-bottom:8px; font-weight:600; color:var(--ozkiz-text);}
       input, textarea, select, button{width:100%; padding:10px; border-radius:12px; border:1px solid var(--ozkiz-line); font-size:14px; font-family:inherit;}
@@ -84,7 +84,7 @@
       .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
       #productResults{max-height:520px; overflow-y:auto; min-width:0;}
       #jobList{max-height:520px; overflow-y:auto; min-width:0;}
-      #logList{max-height:360px; overflow-y:auto;}
+      #logList{max-height:360px; overflow-y:auto; min-width:0;}
       .log-card{display:flex; flex-direction:column;}
       .log-card #logList{flex:1; min-height:0; max-height:640px;}
       .small{font-size:12px; color:var(--ozkiz-muted);}

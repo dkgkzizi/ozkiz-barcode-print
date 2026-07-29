@@ -58,7 +58,7 @@
       .grid{
         display:grid; gap:16px;
         grid-template-columns:1.7fr 1fr;
-        grid-template-areas:"search log" "queue queue";
+        grid-template-areas:"search log" "queue log";
       }
       .grid .search-card{grid-area:search;}
       .grid .log-card{grid-area:log;}
@@ -79,6 +79,8 @@
       .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
       #productResults{max-height:520px; overflow-y:auto; padding-right:4px;}
       #logList{max-height:360px; overflow-y:auto; padding-right:4px;}
+      .log-card{display:flex; flex-direction:column;}
+      .log-card #logList{flex:1; min-height:0; max-height:none;}
       .product{margin-bottom:10px;}
       .product-actions{display:flex; gap:8px; margin-top:8px;}
       .product-actions .print-btn{flex:1;}
@@ -104,10 +106,12 @@
       .log-toolbar input[type="date"]{width:auto; padding:6px 10px; font-size:13px;}
       @media (max-width:800px){
         .grid{grid-template-columns:1fr; grid-template-areas:"search" "queue" "log";}
+        .log-card #logList{flex:none; max-height:360px;}
       }
 
-      body.force-pc .grid{grid-template-columns:1.7fr 1fr !important; grid-template-areas:"search log" "queue queue" !important;}
+      body.force-pc .grid{grid-template-columns:1.7fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
       body.force-mobile .grid{grid-template-columns:1fr !important; grid-template-areas:"search" "queue" "log" !important;}
+      body.force-mobile .log-card #logList{flex:none; max-height:360px;}
       body.force-mobile .card{padding:16px; border-radius:16px;}
       body.force-mobile input, body.force-mobile select, body.force-mobile button{font-size:16px; padding:14px;}
       body.force-mobile h2{font-size:17px;}

@@ -58,7 +58,7 @@
       h2{font-size:16px; color:var(--ozkiz-text);}
       .grid{
         display:grid; gap:16px;
-        grid-template-columns:2fr 1fr;
+        grid-template-columns:1.8fr 1fr;
         grid-template-areas:"search log" "queue log";
       }
       .grid .search-card{grid-area:search; min-width:0;}
@@ -115,7 +115,7 @@
         .log-card #logList{flex:none; max-height:360px;}
       }
 
-      body.force-pc .grid{grid-template-columns:2fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
+      body.force-pc .grid{grid-template-columns:1.8fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
       body.force-mobile .grid{grid-template-columns:1fr !important; grid-template-areas:"search" "queue" "log" !important;}
       body.force-mobile .log-card #logList{flex:none; max-height:360px;}
       body.force-mobile .card{padding:16px; border-radius:16px;}

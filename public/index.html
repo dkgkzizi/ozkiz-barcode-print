@@ -22,11 +22,11 @@
 
       .app-shell{display:flex; align-items:flex-start; min-height:100vh;}
       .sidebar{
-        width:260px; flex-shrink:0; min-height:100vh; position:sticky; top:0;
+        width:320px; flex-shrink:0; min-height:100vh; position:sticky; top:0;
         background:var(--ozkiz-card); border-right:1px solid var(--ozkiz-line);
         padding:28px 20px; display:flex; flex-direction:column; box-sizing:border-box;
       }
-      .sidebar-brand h1{ font-size:20px; font-weight:800; margin:0 0 8px; color:#111; letter-spacing:-0.5px; }
+      .sidebar-brand h1{ font-size:20px; font-weight:800; margin:0 0 8px; color:#111; letter-spacing:-0.5px; white-space:nowrap; }
       .sidebar-brand h1 .brand-mark{ color:var(--ozkiz-orange); font-weight:800; font-size:1em; }
       .sidebar-brand span{ font-size:13px; color:var(--ozkiz-muted); line-height:1.5; display:block; }
       .sidebar-spacer{flex:1;}
@@ -47,6 +47,7 @@
       body.force-mobile .sidebar{width:100%; min-height:auto; position:static; border-right:none; border-bottom:1px solid var(--ozkiz-line); padding:16px;}
       body.force-mobile .sidebar-spacer{display:none;}
       body.force-mobile .sidebar-bottom{margin-top:14px;}
+      body.force-mobile .sidebar-bottom .side-link{display:none;}
       body.force-mobile .app-main{padding:16px; max-width:100%;}
       .view-btn{width:100%; padding:9px 16px; font-size:13px; border-radius:999px; background:#fff; color:var(--ozkiz-orange); border:1.5px solid var(--ozkiz-orange); white-space:nowrap;}
       .view-btn:hover{background:var(--ozkiz-pink-soft);}
@@ -54,7 +55,15 @@
       .view-btn.active:hover{background:var(--ozkiz-orange-dark); border-color:var(--ozkiz-orange-dark);}
       h1,h2{margin-top:0; color:var(--ozkiz-text);}
       h2{font-size:18px; color:var(--ozkiz-text);}
-      .grid{display:grid; gap:16px; grid-template-columns:1fr 1fr;}
+      .grid{
+        display:grid; gap:16px;
+        grid-template-columns:1.7fr 1fr;
+        grid-template-areas:"search log" "queue queue";
+      }
+      .grid .search-card{grid-area:search;}
+      .grid .log-card{grid-area:log;}
+      .grid .queue-card{grid-area:queue;}
+      .grid .card{margin-bottom:0;}
       label{display:block; margin-bottom:8px; font-weight:600; color:var(--ozkiz-text);}
       input, textarea, select, button{width:100%; padding:12px; border-radius:12px; border:1px solid var(--ozkiz-line); font-size:15px; font-family:inherit;}
       input, select{background:#fff; color:var(--ozkiz-text);}
@@ -93,10 +102,12 @@
       .log-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
       .log-toolbar button{width:auto; padding:7px 14px; font-size:13px;}
       .log-toolbar input[type="date"]{width:auto; padding:6px 10px; font-size:13px;}
-      @media (max-width:800px){.grid{grid-template-columns:1fr;}}
+      @media (max-width:800px){
+        .grid{grid-template-columns:1fr; grid-template-areas:"search" "queue" "log";}
+      }
 
-      body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
-      body.force-mobile .grid{grid-template-columns:1fr !important;}
+      body.force-pc .grid{grid-template-columns:1.7fr 1fr !important; grid-template-areas:"search log" "queue queue" !important;}
+      body.force-mobile .grid{grid-template-columns:1fr !important; grid-template-areas:"search" "queue" "log" !important;}
       body.force-mobile .card{padding:16px; border-radius:16px;}
       body.force-mobile input, body.force-mobile select, body.force-mobile button{font-size:16px; padding:14px;}
       body.force-mobile h2{font-size:17px;}
@@ -152,7 +163,7 @@
         </div>
 
         <div class="grid">
-          <div class="card">
+          <div class="card search-card">
             <h2>바코드 스티커 출력</h2>
             <label>검색어</label>
             <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
@@ -163,7 +174,7 @@
             <div id="productResults"></div>
           </div>
 
-          <div class="card">
+          <div class="card log-card">
             <div class="row">
               <h2>출력 로그</h2>
               <div class="log-toolbar">
@@ -174,20 +185,20 @@
             </div>
             <div id="logList"></div>
           </div>
-        </div>
 
-        <div class="card">
-          <h2>출력 대기열</h2>
-          <div class="queue-toolbar">
-            <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
-            <button id="printAllButton" class="secondary" type="button">전체 출력</button>
-            <button id="deleteAllButton" class="ghost" type="button">전체 삭제</button>
+          <div class="card queue-card">
+            <h2>출력 대기열</h2>
+            <div class="queue-toolbar">
+              <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
+              <button id="printAllButton" class="secondary" type="button">전체 출력</button>
+              <button id="deleteAllButton" class="ghost" type="button">전체 삭제</button>
+            </div>
+            <div class="queue-toolbar">
+              <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
+              <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+            </div>
+            <div id="jobList"></div>
           </div>
-          <div class="queue-toolbar">
-            <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
-            <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
-          </div>
-          <div id="jobList"></div>
         </div>
       </main>
     </div>

@@ -89,10 +89,10 @@
       .log-card #logList{flex:1; min-height:0; max-height:640px;}
       .small{font-size:12px; color:var(--ozkiz-muted);}
       .table-wrap{overflow-x:auto;}
-      .data-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+      .data-table{width:100%; border-collapse:collapse; font-size:12px;}
       .data-table th{text-align:left; font-weight:600; color:var(--ozkiz-muted); font-size:11px; padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); white-space:nowrap;}
       .data-table{table-layout:auto;}
-      .data-table td{padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle; white-space:nowrap;}
+      .data-table td{padding:5px 6px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle; white-space:nowrap;}
       .data-table td.wrap{white-space:normal;}
       .data-table tr:last-child td{border-bottom:none;}
       .data-table td.nowrap{white-space:nowrap;}
@@ -374,7 +374,6 @@
               </div>
             </td>
             <td><span class="job-status">${statusLabel(job.status)}</span></td>
-            <td class="small nowrap">${new Date(job.createdAt).toLocaleString()}</td>
             <td>
               <div class="row-actions">
                 <button type="button" onclick="printJob('${job.id}')">출력</button>
@@ -388,7 +387,7 @@
         jobList.innerHTML = `
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th></th><th>바코드</th><th>상품명 / 옵션</th><th>수량</th><th>상태</th><th>등록시간</th><th></th></tr></thead>
+              <thead><tr><th></th><th>바코드</th><th>상품명 / 옵션</th><th>수량</th><th>상태</th><th></th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>

@@ -105,21 +105,11 @@
       .qty-btn{width:20px; height:20px; flex:0 0 20px; padding:0; border-radius:6px; font-size:12px; font-weight:800; line-height:1; background:var(--ozkiz-orange); color:#fff;}
       .qty-btn:hover{background:var(--ozkiz-orange-dark);}
       .qty-input{width:30px; flex:0 0 30px; padding:2px; text-align:center; font-weight:700; font-size:11px;}
-      .search-split{display:grid; grid-template-columns:140px 1fr; gap:14px; align-items:start;}
-      .search-controls{display:flex; flex-direction:column; gap:10px; border-right:1px solid var(--ozkiz-line); padding-right:14px;}
-      .search-controls label{margin-bottom:0;}
-      .queue-split{display:grid; grid-template-columns:96px 1fr; gap:14px; align-items:start;}
-      .queue-controls{display:flex; flex-direction:column; gap:8px; border-right:1px solid var(--ozkiz-line); padding-right:14px;}
-      .queue-controls button{width:100%; padding:9px 6px; font-size:12px; white-space:nowrap;}
-      @media (max-width:900px){
-        .search-split, .queue-split{grid-template-columns:1fr;}
-        .search-controls, .queue-controls{border-right:none; border-bottom:1px solid var(--ozkiz-line); padding-right:0; padding-bottom:16px;}
-      }
-      body.force-mobile .search-split, body.force-mobile .queue-split{grid-template-columns:1fr !important;}
-      body.force-mobile .search-controls, body.force-mobile .queue-controls{border-right:none; border-bottom:1px solid var(--ozkiz-line); padding-right:0; padding-bottom:16px;}
-      .log-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
-      .log-toolbar button{width:auto; padding:7px 14px; font-size:13px;}
+      .log-toolbar, .search-toolbar, .queue-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
+      .log-toolbar button, .search-toolbar button, .queue-toolbar button{width:auto; padding:7px 14px; font-size:13px; white-space:nowrap;}
       .log-toolbar input[type="date"]{width:auto; padding:6px 10px; font-size:13px;}
+      .search-toolbar input{width:220px; max-width:100%;}
+      .data-table th.checkbox-col, .data-table td.checkbox-col{width:1%;}
       @media (max-width:800px){
         .grid{grid-template-columns:1fr; grid-template-areas:"search" "queue" "log";}
         .log-card #logList{flex:none; max-height:360px;}
@@ -183,15 +173,15 @@
 
         <div class="grid">
           <div class="card search-card">
-            <h2>바코드 스티커 출력</h2>
-            <div class="search-split">
-              <div class="search-controls">
+            <div class="row">
+              <h2>바코드 스티커 출력</h2>
+              <div class="search-toolbar">
                 <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
                 <button id="searchButton" type="button">검색</button>
-                <p id="searchMessage" class="small"></p>
               </div>
-              <div id="productResults"></div>
             </div>
+            <p id="searchMessage" class="small"></p>
+            <div id="productResults"></div>
           </div>
 
           <div class="card log-card">
@@ -207,17 +197,15 @@
           </div>
 
           <div class="card queue-card">
-            <h2>출력 대기열</h2>
-            <div class="queue-split">
-              <div class="queue-controls">
-                <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
-                <button id="printAllButton" class="secondary" type="button">전체 출력</button>
-                <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
-                <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+            <div class="row">
+              <h2>출력 대기열</h2>
+              <div class="queue-toolbar">
                 <button id="deleteAllButton" class="ghost" type="button">초기화</button>
+                <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+                <button id="printAllButton" class="secondary" type="button">전체 출력</button>
               </div>
-              <div id="jobList"></div>
             </div>
+            <div id="jobList"></div>
           </div>
         </div>
       </main>
@@ -230,10 +218,8 @@
       const productResults = document.getElementById('productResults');
       const jobList = document.getElementById('jobList');
       const logList = document.getElementById('logList');
-      const selectAllButton = document.getElementById('selectAllButton');
       const printSelectedButton = document.getElementById('printSelectedButton');
       const printAllButton = document.getElementById('printAllButton');
-      const deleteSelectedButton = document.getElementById('deleteSelectedButton');
       const deleteAllButton = document.getElementById('deleteAllButton');
       const startScanButton = document.getElementById('startScanButton');
       const stopScanButton = document.getElementById('stopScanButton');
@@ -385,10 +371,12 @@
         `;
         }).join('');
 
+        const allSelected = state.jobs.length > 0 && state.selectedJobs.size === state.jobs.length;
+
         jobList.innerHTML = `
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th></th><th>바코드</th><th>상품명 / 옵션</th><th>수량</th><th>상태</th><th></th></tr></thead>
+              <thead><tr><th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox" ${allSelected ? 'checked' : ''} /></th><th>바코드</th><th>상품명 / 옵션</th><th>수량</th><th>상태</th><th></th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
@@ -911,15 +899,6 @@
         }
       });
 
-      selectAllButton.addEventListener('click', () => {
-        if (state.selectedJobs.size === state.jobs.length) {
-          state.selectedJobs.clear();
-        } else {
-          state.selectedJobs = new Set(state.jobs.map((job) => job.id));
-        }
-        renderJobs();
-      });
-
       printSelectedButton.addEventListener('click', async () => {
         const selected = state.jobs.filter((job) => state.selectedJobs.has(job.id));
         if (!selected.length) {
@@ -937,18 +916,6 @@
         await printJobsBatch(state.jobs.slice());
       });
 
-      deleteSelectedButton.addEventListener('click', async () => {
-        const selected = state.jobs.filter((job) => state.selectedJobs.has(job.id));
-        if (!selected.length) {
-          searchMessage.textContent = '선택된 항목이 없습니다.';
-          return;
-        }
-        if (!window.confirm(`선택한 ${selected.length}개 항목을 삭제할까요?`)) return;
-        await Promise.all(selected.map((job) => fetch(`/api/jobs/${job.id}`, { method: 'DELETE' })));
-        selected.forEach((job) => state.selectedJobs.delete(job.id));
-        await refreshJobs();
-      });
-
       deleteAllButton.addEventListener('click', async () => {
         if (!state.jobs.length) {
           searchMessage.textContent = '대기열에 항목이 없습니다.';
@@ -964,6 +931,14 @@
       stopScanButton.addEventListener('click', stopScan);
 
       jobList.addEventListener('change', (event) => {
+        if (event.target.id === 'selectAllCheckbox') {
+          state.selectedJobs = event.target.checked
+            ? new Set(state.jobs.map((job) => job.id))
+            : new Set();
+          renderJobs();
+          return;
+        }
+
         const checkbox = event.target.closest('input[type="checkbox"][data-job-id]');
         if (!checkbox) return;
         const jobId = checkbox.getAttribute('data-job-id');

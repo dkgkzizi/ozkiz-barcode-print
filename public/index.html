@@ -18,26 +18,36 @@
       }
       * { box-sizing:border-box; }
       body { margin:0; font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif; background:var(--ozkiz-bg); color:var(--ozkiz-text); }
-      .wrap { max-width:1640px; margin:0 auto; padding:24px 40px; }
       .card { background:var(--ozkiz-card); border:1px solid var(--ozkiz-line); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 6px 20px rgba(0,0,0,0.06); }
-      .brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
-      .brand-text{flex:1; min-width:180px;}
-      .brand-text h1{ font-size:22px; font-weight:800; margin:0; color:#111; letter-spacing:-0.5px; }
-      .brand-text h1 .brand-mark{ color:var(--ozkiz-orange); font-weight:800; font-size:1em; }
-      .brand-text span{ font-size:13px; color:var(--ozkiz-muted); }
-      .view-toggle{display:flex; flex-direction:column; gap:6px; flex-shrink:0;}
-      .side-nav{
-        position:fixed; left:16px; bottom:16px; z-index:40;
-        display:flex; flex-direction:column; gap:8px; max-width:170px;
+
+      .app-shell{display:flex; align-items:flex-start; min-height:100vh;}
+      .sidebar{
+        width:260px; flex-shrink:0; min-height:100vh; position:sticky; top:0;
+        background:var(--ozkiz-card); border-right:1px solid var(--ozkiz-line);
+        padding:28px 20px; display:flex; flex-direction:column; box-sizing:border-box;
       }
+      .sidebar-brand h1{ font-size:20px; font-weight:800; margin:0 0 8px; color:#111; letter-spacing:-0.5px; }
+      .sidebar-brand h1 .brand-mark{ color:var(--ozkiz-orange); font-weight:800; font-size:1em; }
+      .sidebar-brand span{ font-size:13px; color:var(--ozkiz-muted); line-height:1.5; display:block; }
+      .sidebar-spacer{flex:1;}
+      .sidebar-bottom{display:flex; flex-direction:column; gap:8px; margin-top:24px;}
+      .view-toggle{display:flex; flex-direction:column; gap:6px; flex-shrink:0;}
       .side-link{
         display:flex; align-items:center; gap:6px;
         background:#fff; border:1px solid var(--ozkiz-line); border-radius:12px;
         padding:10px 14px; font-size:13px; font-weight:700; color:var(--ozkiz-text);
-        text-decoration:none; box-shadow:0 4px 14px rgba(0,0,0,0.08);
+        text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,0.05);
       }
       .side-link:hover{border-color:var(--ozkiz-orange);}
       .side-link-mark{color:var(--ozkiz-orange); font-weight:800;}
+
+      .app-main{flex:1; min-width:0; max-width:1500px; padding:32px 40px; box-sizing:border-box;}
+
+      body.force-mobile .app-shell{flex-direction:column;}
+      body.force-mobile .sidebar{width:100%; min-height:auto; position:static; border-right:none; border-bottom:1px solid var(--ozkiz-line); padding:16px;}
+      body.force-mobile .sidebar-spacer{display:none;}
+      body.force-mobile .sidebar-bottom{margin-top:14px;}
+      body.force-mobile .app-main{padding:16px; max-width:100%;}
       .view-btn{width:100%; padding:9px 16px; font-size:13px; border-radius:999px; background:#fff; color:var(--ozkiz-orange); border:1.5px solid var(--ozkiz-orange); white-space:nowrap;}
       .view-btn:hover{background:var(--ozkiz-pink-soft);}
       .view-btn.active{background:var(--ozkiz-orange); color:#fff; border-color:var(--ozkiz-orange);}
@@ -87,7 +97,6 @@
 
       body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
       body.force-mobile .grid{grid-template-columns:1fr !important;}
-      body.force-mobile .wrap{padding:14px;}
       body.force-mobile .card{padding:16px; border-radius:16px;}
       body.force-mobile input, body.force-mobile select, body.force-mobile button{font-size:16px; padding:14px;}
       body.force-mobile h2{font-size:17px;}
@@ -105,52 +114,66 @@
     <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
   </head>
   <body>
-    <div class="wrap">
-      <div class="card brand">
-        <div class="brand-text">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
           <h1><span class="brand-mark">OH!</span> Barcode</h1>
           <span>상품명을 입력하면 Supabase의 상품 데이터에서 바코드를 찾아 바로 스티커 출력 요청을 보냅니다.</span>
         </div>
-      </div>
-
-      <div class="side-nav">
-        <a class="side-link" href="https://india-packing-web-cddc.vercel.app/?pc=1" target="_blank" rel="noopener noreferrer">
-          <span class="side-link-mark">OH!</span> Packing
-        </a>
-        <a class="side-link" href="https://easyadmin-shipping-web.onrender.com/" target="_blank" rel="noopener noreferrer">
-          <span class="side-link-mark">OH!</span> DMC
-        </a>
-        <div class="view-toggle">
-          <button type="button" id="viewPcButton" class="view-btn">PC 버전</button>
-          <button type="button" id="viewMobileButton" class="view-btn">모바일 버전</button>
-        </div>
-      </div>
-
-      <div class="card scan-card">
-        <h2>바코드 스캔</h2>
-        <button id="startScanButton" type="button">카메라로 바코드 스캔</button>
-        <div id="scanVideoWrap" style="display:none; margin-top:10px;">
-          <div class="scan-frame">
-            <video id="scanVideo" playsinline autoplay muted></video>
-            <canvas id="scanOverlay"></canvas>
-          </div>
-          <div class="scan-actions">
-            <button id="stopScanButton" class="ghost" type="button">스캔 중지</button>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-bottom">
+          <a class="side-link" href="https://india-packing-web-cddc.vercel.app/?pc=1" target="_blank" rel="noopener noreferrer">
+            <span class="side-link-mark">OH!</span> Packing
+          </a>
+          <a class="side-link" href="https://easyadmin-shipping-web.onrender.com/" target="_blank" rel="noopener noreferrer">
+            <span class="side-link-mark">OH!</span> DMC
+          </a>
+          <div class="view-toggle">
+            <button type="button" id="viewPcButton" class="view-btn">PC 버전</button>
+            <button type="button" id="viewMobileButton" class="view-btn">모바일 버전</button>
           </div>
         </div>
-        <p id="scanMessage" class="small"></p>
-      </div>
+      </aside>
 
-      <div class="grid">
-        <div class="card">
-          <h2>바코드 스티커 출력</h2>
-          <label>검색어</label>
-          <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
-          <div class="row" style="margin-top:10px;">
-            <button id="searchButton" type="button">검색</button>
+      <main class="app-main">
+        <div class="card scan-card">
+          <h2>바코드 스캔</h2>
+          <button id="startScanButton" type="button">카메라로 바코드 스캔</button>
+          <div id="scanVideoWrap" style="display:none; margin-top:10px;">
+            <div class="scan-frame">
+              <video id="scanVideo" playsinline autoplay muted></video>
+              <canvas id="scanOverlay"></canvas>
+            </div>
+            <div class="scan-actions">
+              <button id="stopScanButton" class="ghost" type="button">스캔 중지</button>
+            </div>
           </div>
-          <p id="searchMessage" class="small"></p>
-          <div id="productResults"></div>
+          <p id="scanMessage" class="small"></p>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h2>바코드 스티커 출력</h2>
+            <label>검색어</label>
+            <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
+            <div class="row" style="margin-top:10px;">
+              <button id="searchButton" type="button">검색</button>
+            </div>
+            <p id="searchMessage" class="small"></p>
+            <div id="productResults"></div>
+          </div>
+
+          <div class="card">
+            <div class="row">
+              <h2>출력 로그</h2>
+              <div class="log-toolbar">
+                <input type="date" id="logDateInput" />
+                <button id="toggleLogsButton" class="ghost" type="button">접기</button>
+                <button id="clearLogsButton" class="ghost" type="button">초기화</button>
+              </div>
+            </div>
+            <div id="logList"></div>
+          </div>
         </div>
 
         <div class="card">
@@ -166,18 +189,7 @@
           </div>
           <div id="jobList"></div>
         </div>
-      </div>
-      <div class="card">
-        <div class="row">
-          <h2>출력 로그</h2>
-          <div class="log-toolbar">
-            <input type="date" id="logDateInput" />
-            <button id="toggleLogsButton" class="ghost" type="button">접기</button>
-            <button id="clearLogsButton" class="ghost" type="button">초기화</button>
-          </div>
-        </div>
-        <div id="logList"></div>
-      </div>
+      </main>
     </div>
 
     <script>

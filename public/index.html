@@ -91,7 +91,9 @@
       .table-wrap{overflow-x:auto;}
       .data-table{width:100%; border-collapse:collapse; font-size:12.5px;}
       .data-table th{text-align:left; font-weight:600; color:var(--ozkiz-muted); font-size:11px; padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); white-space:nowrap;}
-      .data-table td{padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle;}
+      .data-table{table-layout:auto;}
+      .data-table td{padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle; white-space:nowrap;}
+      .data-table td.wrap{white-space:normal;}
       .data-table tr:last-child td{border-bottom:none;}
       .data-table td.nowrap{white-space:nowrap;}
       .data-table .name-cell{font-weight:700; color:var(--ozkiz-text);}

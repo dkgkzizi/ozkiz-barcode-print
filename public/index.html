@@ -58,7 +58,7 @@
       h2{font-size:16px; color:var(--ozkiz-text);}
       .grid{
         display:grid; gap:16px;
-        grid-template-columns:1.7fr 1fr;
+        grid-template-columns:2.3fr 1fr;
         grid-template-areas:"search log" "queue log";
       }
       .grid .search-card{grid-area:search; min-width:0;}
@@ -93,7 +93,7 @@
       .data-table th{text-align:left; font-weight:600; color:var(--ozkiz-muted); font-size:11px; padding:6px 8px; border-bottom:1px solid var(--ozkiz-line); white-space:nowrap;}
       .data-table{table-layout:auto;}
       .data-table td{padding:5px 6px; border-bottom:1px solid var(--ozkiz-line); vertical-align:middle; white-space:nowrap;}
-      .data-table td.wrap{white-space:normal;}
+      .data-table td.wrap{white-space:normal; max-width:190px;}
       .data-table tr:last-child td{border-bottom:none;}
       .data-table td.nowrap{white-space:nowrap;}
       .data-table .name-cell{font-weight:700; color:var(--ozkiz-text);}
@@ -124,7 +124,7 @@
         .log-card #logList{flex:none; max-height:360px;}
       }
 
-      body.force-pc .grid{grid-template-columns:1.7fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
+      body.force-pc .grid{grid-template-columns:2.3fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
       body.force-mobile .grid{grid-template-columns:1fr !important; grid-template-areas:"search" "queue" "log" !important;}
       body.force-mobile .log-card #logList{flex:none; max-height:360px;}
       body.force-mobile .card{padding:16px; border-radius:16px;}
@@ -304,7 +304,7 @@
         const rows = state.logs.map((log) => `
           <tr>
             <td class="name-cell nowrap">${log.barcode}</td>
-            <td class="small">${log.note || '-'}${log.option ? ` · ${log.option}` : ''}</td>
+            <td class="small wrap">${log.note || '-'}${log.option ? ` · ${log.option}` : ''}</td>
             <td><span class="job-status">출력 ${log.printCount || 1}회</span></td>
             <td class="small nowrap">${new Date(log.printedAt).toLocaleString()}</td>
             <td>
@@ -365,7 +365,7 @@
           <tr style="background:${isSelected ? 'var(--ozkiz-pink-soft)' : 'transparent'};">
             <td><input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} /></td>
             <td class="name-cell nowrap">${job.barcode}</td>
-            <td class="small">${job.note || '-'}${job.option ? ` · ${job.option}` : ''}</td>
+            <td class="small wrap">${job.note || '-'}${job.option ? ` · ${job.option}` : ''}</td>
             <td>
               <div class="qty-row">
                 <button type="button" class="qty-btn" data-action="dec" data-job-id="${job.id}">−</button>
@@ -415,7 +415,7 @@
         const rows = state.products.map((product, index) => `
           <tr>
             <td class="name-cell">${product.name}</td>
-            <td class="small">${product.sku || '-'} · ${product.option || '-'}</td>
+            <td class="small wrap">${product.sku || '-'} · ${product.option || '-'}</td>
             <td class="small">${product.barcode || '바코드 없음'}</td>
             <td>
               <div class="row-actions">

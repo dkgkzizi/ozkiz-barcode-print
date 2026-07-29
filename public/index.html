@@ -68,8 +68,9 @@
       .queue-toolbar button{width:auto; flex:1; padding:7px 4px; font-size:12px; white-space:nowrap;}
       .log-actions{display:flex; justify-content:flex-end; margin-top:8px;}
       .log-actions button{width:auto; padding:7px 14px; font-size:13px;}
-      .log-toolbar{display:flex; gap:8px; flex-shrink:0;}
+      .log-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
       .log-toolbar button{width:auto; padding:7px 14px; font-size:13px;}
+      .log-toolbar input[type="date"]{width:auto; padding:6px 10px; font-size:13px;}
       @media (max-width:800px){.grid{grid-template-columns:1fr;}}
 
       body.force-pc .grid{grid-template-columns:1fr 1fr !important;}
@@ -135,12 +136,12 @@
           <h2>출력 대기열</h2>
           <div class="queue-toolbar">
             <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
-            <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
             <button id="printAllButton" class="secondary" type="button">전체 출력</button>
+            <button id="deleteAllButton" class="ghost" type="button">전체 삭제</button>
           </div>
           <div class="queue-toolbar">
             <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
-            <button id="deleteAllButton" class="ghost" type="button">전체 삭제</button>
+            <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
           </div>
           <div id="jobList"></div>
         </div>
@@ -149,6 +150,7 @@
         <div class="row">
           <h2>출력 로그</h2>
           <div class="log-toolbar">
+            <input type="date" id="logDateInput" />
             <button id="toggleLogsButton" class="ghost" type="button">접기</button>
             <button id="clearLogsButton" class="ghost" type="button">초기화</button>
           </div>
@@ -180,7 +182,22 @@
       const viewMobileButton = document.getElementById('viewMobileButton');
       const toggleLogsButton = document.getElementById('toggleLogsButton');
       const clearLogsButton = document.getElementById('clearLogsButton');
+      const logDateInput = document.getElementById('logDateInput');
       const state = { jobs: [], products: [], logs: [], searched: false, selectedJobs: new Set(), logsCollapsed: false };
+
+      function getKstDateString(date) {
+        const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+        return kst.toISOString().slice(0, 10);
+      }
+
+      function addDaysToDateString(dateString, days) {
+        const [y, m, d] = dateString.split('-').map(Number);
+        const base = new Date(Date.UTC(y, m - 1, d));
+        base.setUTCDate(base.getUTCDate() + days);
+        return base.toISOString().slice(0, 10);
+      }
+
+      let lastKnownTodayKst = getKstDateString(new Date());
 
       function applyViewMode(mode) {
         const isMobile = mode === 'mobile';
@@ -202,7 +219,15 @@
       }
 
       async function refreshLogs() {
-        const response = await fetch('/api/logs');
+        const currentTodayKst = getKstDateString(new Date());
+        if (logDateInput.value === lastKnownTodayKst && currentTodayKst !== lastKnownTodayKst) {
+          logDateInput.value = currentTodayKst;
+          logDateInput.max = currentTodayKst;
+          logDateInput.min = addDaysToDateString(currentTodayKst, -6);
+        }
+        lastKnownTodayKst = currentTodayKst;
+
+        const response = await fetch(`/api/logs?date=${encodeURIComponent(logDateInput.value)}`);
         state.logs = await response.json();
         renderLogs();
       }
@@ -883,6 +908,13 @@
         await fetch('/api/logs', { method: 'DELETE' });
         state.logs = [];
         renderLogs();
+      });
+
+      logDateInput.value = lastKnownTodayKst;
+      logDateInput.max = lastKnownTodayKst;
+      logDateInput.min = addDaysToDateString(lastKnownTodayKst, -6);
+      logDateInput.addEventListener('change', () => {
+        refreshLogs();
       });
 
       const savedViewMode = localStorage.getItem('viewMode');

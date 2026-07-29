@@ -26,6 +26,18 @@
       .brand-text h1 .brand-mark{ color:var(--ozkiz-orange); font-weight:800; font-size:1em; }
       .brand-text span{ font-size:13px; color:var(--ozkiz-muted); }
       .view-toggle{display:flex; gap:6px; flex-shrink:0;}
+      .side-nav{
+        position:fixed; left:16px; bottom:16px; z-index:40;
+        display:flex; flex-direction:column; gap:8px; max-width:170px;
+      }
+      .side-link{
+        display:flex; align-items:center; gap:6px;
+        background:#fff; border:1px solid var(--ozkiz-line); border-radius:12px;
+        padding:10px 14px; font-size:13px; font-weight:700; color:var(--ozkiz-text);
+        text-decoration:none; box-shadow:0 4px 14px rgba(0,0,0,0.08);
+      }
+      .side-link:hover{border-color:var(--ozkiz-orange);}
+      .side-link-mark{color:var(--ozkiz-orange); font-weight:800;}
       .view-btn{width:auto; padding:9px 16px; font-size:13px; border-radius:999px; background:#fff; color:var(--ozkiz-orange); border:1.5px solid var(--ozkiz-orange);}
       .view-btn:hover{background:var(--ozkiz-pink-soft);}
       .view-btn.active{background:var(--ozkiz-orange); color:#fff; border-color:var(--ozkiz-orange);}
@@ -99,6 +111,15 @@
           <h1><span class="brand-mark">OH!</span> Barcode</h1>
           <span>상품명을 입력하면 Supabase의 상품 데이터에서 바코드를 찾아 바로 스티커 출력 요청을 보냅니다.</span>
         </div>
+      </div>
+
+      <div class="side-nav">
+        <a class="side-link" href="https://india-packing-web-cddc.vercel.app/?pc=1" target="_blank" rel="noopener noreferrer">
+          <span class="side-link-mark">OH!</span> Packing
+        </a>
+        <a class="side-link" href="https://easyadmin-shipping-web.onrender.com/" target="_blank" rel="noopener noreferrer">
+          <span class="side-link-mark">OH!</span> DMC
+        </a>
         <div class="view-toggle">
           <button type="button" id="viewPcButton" class="view-btn">PC 버전</button>
           <button type="button" id="viewMobileButton" class="view-btn">모바일 버전</button>

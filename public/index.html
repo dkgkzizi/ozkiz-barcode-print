@@ -95,8 +95,8 @@
       .qty-time{margin-left:auto; flex:0 0 auto;}
       .job-actions{display:flex; gap:8px; margin-top:10px;}
       .job-actions button{width:auto; padding:6px 12px; font-size:12px;}
-      .queue-toolbar{display:flex; gap:6px; margin-bottom:8px;}
-      .queue-toolbar button{width:auto; flex:1; padding:7px 4px; font-size:12px; white-space:nowrap;}
+      .queue-toolbar{display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:8px;}
+      .queue-toolbar button{width:100%; padding:9px 4px; font-size:12px; white-space:nowrap;}
       .log-actions{display:flex; justify-content:flex-end; margin-top:8px;}
       .log-actions button{width:auto; padding:7px 14px; font-size:13px;}
       .log-toolbar{display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap;}
@@ -192,10 +192,8 @@
               <button id="selectAllButton" class="secondary" type="button">전체 선택</button>
               <button id="printAllButton" class="secondary" type="button">전체 출력</button>
               <button id="deleteAllButton" class="ghost" type="button">전체 삭제</button>
-            </div>
-            <div class="queue-toolbar">
               <button id="deleteSelectedButton" class="ghost" type="button">선택 삭제</button>
-              <button id="printSelectedButton" class="secondary" type="button">선택 출력</button>
+              <button id="printSelectedButton" class="secondary" type="button" style="grid-column:span 2;">선택 출력</button>
             </div>
             <div id="jobList"></div>
           </div>

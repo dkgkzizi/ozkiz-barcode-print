@@ -6,19 +6,20 @@
     <title>OH! Barcode</title>
     <style>
       :root{
-        --ozkiz-orange:#e11d2e;
-        --ozkiz-orange-dark:#b0121f;
+        --ozkiz-orange:#e5152c;
+        --ozkiz-orange-light:#ff3b50;
+        --ozkiz-orange-dark:#a80d1f;
         --ozkiz-pink:#c81e3a;
         --ozkiz-pink-soft:#fdeceb;
-        --ozkiz-bg:#ffffff;
+        --ozkiz-bg:#fbfbfc;
         --ozkiz-card:#ffffff;
-        --ozkiz-line:#e5e5e5;
-        --ozkiz-text:#111111;
-        --ozkiz-muted:#6b7280;
+        --ozkiz-line:#e9e6e7;
+        --ozkiz-text:#1a1a1a;
+        --ozkiz-muted:#7a7478;
       }
       * { box-sizing:border-box; }
       body { margin:0; font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif; background:var(--ozkiz-bg); color:var(--ozkiz-text); }
-      .card { background:var(--ozkiz-card); border:1px solid var(--ozkiz-line); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 6px 20px rgba(0,0,0,0.06); }
+      .card { background:var(--ozkiz-card); border:1px solid var(--ozkiz-line); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 10px 28px rgba(180,20,35,0.06), 0 2px 6px rgba(0,0,0,0.03); }
 
       .app-shell{display:flex; align-items:flex-start; min-height:100vh;}
       .sidebar{
@@ -66,15 +67,19 @@
       .grid .card{margin-bottom:0;}
       label{display:block; margin-bottom:8px; font-weight:600; color:var(--ozkiz-text);}
       input, textarea, select, button{width:100%; padding:12px; border-radius:12px; border:1px solid var(--ozkiz-line); font-size:15px; font-family:inherit;}
-      input, select{background:#fff; color:var(--ozkiz-text);}
+      input, select{background:#fff; color:var(--ozkiz-text); transition:border-color .15s ease, box-shadow .15s ease;}
+      input:focus, select:focus{outline:none; border-color:var(--ozkiz-orange); box-shadow:0 0 0 3px rgba(229,21,44,0.12);}
       input[type="checkbox"]{width:16px; height:16px; padding:0; flex:0 0 16px; accent-color:var(--ozkiz-orange); cursor:pointer;}
-      button{cursor:pointer; background:var(--ozkiz-orange); color:white; font-weight:700; border:none; transition:transform .05s ease, background .15s ease;}
-      button:hover{background:var(--ozkiz-orange-dark);}
-      button:active{transform:scale(0.98);}
-      button.secondary{background:var(--ozkiz-pink); color:#fff;}
-      button.secondary:hover{background:var(--ozkiz-orange-dark);}
-      button.ghost{background:var(--ozkiz-pink); color:#fff;}
-      button.ghost:hover{background:var(--ozkiz-orange-dark);}
+      button{
+        cursor:pointer; color:white; font-weight:700; border:none; border-radius:14px;
+        background:linear-gradient(180deg, var(--ozkiz-orange-light), var(--ozkiz-orange) 60%, var(--ozkiz-orange-dark));
+        box-shadow:0 1px 0 rgba(255,255,255,0.25) inset, 0 -2px 0 rgba(0,0,0,0.1) inset, 0 3px 8px rgba(180,20,35,0.28);
+        transition:transform .06s ease, box-shadow .15s ease, filter .15s ease;
+      }
+      button:hover{filter:brightness(1.04);}
+      button:active{transform:translateY(1px) scale(0.99); box-shadow:0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.08) inset, 0 1px 3px rgba(180,20,35,0.25);}
+      button.secondary{background:linear-gradient(180deg, #ff5068, var(--ozkiz-pink) 60%, #a3172e);}
+      button.ghost{background:linear-gradient(180deg, #ff5068, var(--ozkiz-pink) 60%, #a3172e);}
       .job, .product {border:1px solid var(--ozkiz-line); border-radius:14px; padding:12px; background:#fafafa; margin-bottom:8px;}
       .row{display:flex; justify-content:space-between; gap:8px; align-items:center;}
       #productResults{max-height:520px; overflow-y:auto; padding-right:4px; min-width:0;}
@@ -180,7 +185,6 @@
             <h2>바코드 스티커 출력</h2>
             <div class="search-split">
               <div class="search-controls">
-                <label>검색어</label>
                 <input id="productQuery" placeholder="상품명 또는 상품명 색상 사이즈" />
                 <button id="searchButton" type="button">검색</button>
                 <p id="searchMessage" class="small"></p>
@@ -339,7 +343,7 @@
 
       function renderJobs() {
         if (!state.jobs.length) {
-          jobList.innerHTML = '<div class="job"><div class="small">대기 중인 요청이 없습니다.</div></div>';
+          jobList.innerHTML = '';
           state.selectedJobs.clear();
           return;
         }
@@ -347,7 +351,7 @@
         jobList.innerHTML = state.jobs.map((job) => {
           const isSelected = state.selectedJobs.has(job.id);
           return `
-          <div class="job" style="border-color:${isSelected ? '#e11d2e' : '#e5e5e5'};">
+          <div class="job" style="border-color:${isSelected ? '#e5152c' : '#e9e6e7'};">
             <div class="job-top">
               <input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} />
               <strong>${job.barcode}</strong>
@@ -383,13 +387,8 @@
       }
 
       function renderProducts() {
-        if (!state.searched) {
-          productResults.innerHTML = '<div class="product"><div class="small">상품명을 입력한 뒤 검색 버튼을 눌러주세요.</div></div>';
-          return;
-        }
-
-        if (!state.products.length) {
-          productResults.innerHTML = '<div class="product"><div class="small">검색 결과가 없습니다. 다른 키워드를 시도해 보세요.</div></div>';
+        if (!state.searched || !state.products.length) {
+          productResults.innerHTML = '';
           return;
         }
 
@@ -409,10 +408,10 @@
       async function searchProducts() {
         const query = searchInput.value.trim();
         state.searched = true;
+        searchMessage.textContent = '';
 
         if (!query) {
           state.products = [];
-          searchMessage.textContent = '검색어를 입력해주세요.';
           renderProducts();
           return;
         }
@@ -420,11 +419,6 @@
         const response = await fetch(`/api/products?query=${encodeURIComponent(query)}`);
         const data = await response.json();
         state.products = data.products || [];
-        searchMessage.textContent = data.source === 'supabase'
-          ? `${state.products.length}개 찾음`
-          : data.source === 'sample'
-            ? `샘플 데이터에서 ${state.products.length}개 찾음`
-            : '검색 결과가 없습니다.';
         renderProducts();
       }
 

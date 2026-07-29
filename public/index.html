@@ -240,7 +240,8 @@
 
         logList.innerHTML = state.logs.map((log) => `
           <div class="job">
-            <div class="row"><strong>${log.barcode}</strong><span>${new Date(log.printedAt).toLocaleString()}</span></div>
+            <div class="row"><strong>${log.barcode}</strong><span class="job-status">출력 ${log.printCount || 1}회</span></div>
+            <div class="small">${new Date(log.printedAt).toLocaleString()}</div>
             <div class="small">품번: ${log.sku || '-'} / 옵션: ${log.option || '-'}</div>
             ${log.note ? `<div class="small">상품명: ${log.note}</div>` : ''}
             <div class="log-actions">
@@ -250,7 +251,7 @@
         `).join('');
       }
 
-      window.reprintLog = function(logId) {
+      window.reprintLog = async function(logId) {
         const log = state.logs.find((item) => item.id === logId);
         if (!log) return;
         const job = { barcode: log.barcode, quantity: 1, note: log.note, sku: log.sku, option: log.option };
@@ -258,6 +259,17 @@
         printWindow.document.write(buildLabelHtml(job));
         printWindow.document.close();
         setTimeout(() => { printWindow.print(); }, 400);
+
+        const response = await fetch('/api/logs', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: logId })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          log.printCount = data.printCount;
+          renderLogs();
+        }
       };
 
       function statusLabel(status) {

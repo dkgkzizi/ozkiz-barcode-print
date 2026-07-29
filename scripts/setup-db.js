@@ -24,9 +24,12 @@ async function main() {
         sku text DEFAULT '',
         option text DEFAULT '',
         source text DEFAULT 'mobile',
-        printed_at timestamptz NOT NULL DEFAULT now()
+        printed_at timestamptz NOT NULL DEFAULT now(),
+        print_count integer NOT NULL DEFAULT 1
       );
     `);
+
+    await client.query(`ALTER TABLE public.print_logs ADD COLUMN IF NOT EXISTS print_count integer NOT NULL DEFAULT 1;`);
   });
 
   console.log('print_jobs / print_logs tables ready');

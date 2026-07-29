@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
     const result = await withClient(async (client) => {
       await client.query(`DELETE FROM public.print_logs WHERE printed_at < now() - interval '7 days'`);
       return client.query(
-        `SELECT id, barcode, note, sku, option, source, printed_at AS "printedAt"
+        `SELECT id, barcode, note, sku, option, source, printed_at AS "printedAt", print_count AS "printCount"
          FROM public.print_logs
          WHERE (printed_at AT TIME ZONE 'Asia/Seoul')::date = COALESCE($1::date, (now() AT TIME ZONE 'Asia/Seoul')::date)
          ORDER BY printed_at DESC
@@ -18,6 +18,30 @@ module.exports = async function handler(req, res) {
     });
 
     res.status(200).json(result.rows);
+    return;
+  }
+
+  if (req.method === 'PATCH') {
+    const payload = req.body || {};
+    const id = String(payload.id || '');
+    if (!id) {
+      res.status(400).json({ error: 'id is required' });
+      return;
+    }
+
+    const result = await withClient((client) =>
+      client.query(
+        `UPDATE public.print_logs SET print_count = print_count + 1 WHERE id = $1 RETURNING print_count AS "printCount"`,
+        [id]
+      )
+    );
+
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: 'Log not found' });
+      return;
+    }
+
+    res.status(200).json({ ok: true, printCount: result.rows[0].printCount });
     return;
   }
 

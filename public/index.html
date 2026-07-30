@@ -59,7 +59,7 @@
       .grid{
         display:grid; gap:16px;
         grid-template-columns:1.8fr 1fr;
-        grid-template-areas:"search log" "queue log";
+        grid-template-areas:"search queue" "log queue";
       }
       .grid .search-card{grid-area:search; min-width:0;}
       .grid .log-card{grid-area:log; min-width:0;}
@@ -86,8 +86,8 @@
       #productResults{max-height:520px; min-height:240px; overflow-y:auto; min-width:0;}
       #jobList{max-height:520px; min-height:240px; overflow-y:auto; min-width:0;}
       #logList{max-height:360px; min-height:240px; overflow-y:auto; min-width:0;}
-      .log-card{display:flex; flex-direction:column;}
-      .log-card #logList{flex:1; min-height:240px; max-height:640px;}
+      .queue-card{display:flex; flex-direction:column;}
+      .queue-card #jobList{flex:1; min-height:240px; max-height:640px;}
       .small{font-size:12px; color:var(--ozkiz-muted);}
       .table-wrap{overflow-x:auto;}
       .data-table{width:100%; border-collapse:collapse; font-size:12px;}
@@ -112,12 +112,12 @@
       .data-table th.checkbox-col, .data-table td.checkbox-col{width:1%;}
       @media (max-width:800px){
         .grid{grid-template-columns:1fr; grid-template-areas:"search" "queue" "log";}
-        .log-card #logList{flex:none; max-height:360px;}
+        .queue-card #jobList{flex:none; max-height:520px;}
       }
 
-      body.force-pc .grid{grid-template-columns:1.8fr 1fr !important; grid-template-areas:"search log" "queue log" !important;}
+      body.force-pc .grid{grid-template-columns:1.8fr 1fr !important; grid-template-areas:"search queue" "log queue" !important;}
       body.force-mobile .grid{grid-template-columns:1fr !important; grid-template-areas:"search" "queue" "log" !important;}
-      body.force-mobile .log-card #logList{flex:none; max-height:360px;}
+      body.force-mobile .queue-card #jobList{flex:none; max-height:520px;}
       body.force-mobile .card{padding:16px; border-radius:16px;}
       body.force-mobile input, body.force-mobile select, body.force-mobile button{font-size:16px; padding:14px;}
       body.force-mobile h2{font-size:17px;}

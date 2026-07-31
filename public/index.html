@@ -110,6 +110,18 @@
       .log-toolbar input[type="date"]{width:auto; padding:6px 10px; font-size:13px;}
       .search-toolbar input{width:220px; max-width:100%;}
       .data-table th.checkbox-col, .data-table td.checkbox-col{width:1%;}
+      @keyframes rowFadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+      #productResults tbody tr{ animation:rowFadeIn .32s ease both; }
+      @media (prefers-reduced-motion:reduce){ #productResults tbody tr{ animation:none; } }
+      .fly-dot{ position:fixed; z-index:9999; width:14px; height:14px; border-radius:999px; background:var(--ozkiz-orange); box-shadow:0 4px 10px rgba(229,21,44,0.4); pointer-events:none; }
+      @keyframes queuePulse{
+        0%{ box-shadow:0 10px 28px rgba(180,20,35,0.06), 0 2px 6px rgba(0,0,0,0.03); }
+        40%{ box-shadow:0 0 0 4px rgba(229,21,44,0.22), 0 10px 28px rgba(180,20,35,0.06); }
+        100%{ box-shadow:0 10px 28px rgba(180,20,35,0.06), 0 2px 6px rgba(0,0,0,0.03); }
+      }
+      .queue-card.pulse{ animation:queuePulse .55s ease; }
+      @keyframes rowHighlight{ from{ background:var(--ozkiz-pink-soft); } to{ background:transparent; } }
+      .data-table tr.just-added{ animation:rowHighlight 1s ease; }
       @media (max-width:800px){
         .grid{grid-template-columns:1fr; grid-template-areas:"search" "queue" "log";}
         .queue-card #jobList{flex:none; max-height:520px;}
@@ -233,7 +245,38 @@
       const toggleLogsButton = document.getElementById('toggleLogsButton');
       const clearLogsButton = document.getElementById('clearLogsButton');
       const logDateInput = document.getElementById('logDateInput');
-      const state = { jobs: [], products: [], logs: [], searched: false, selectedJobs: new Set(), logsCollapsed: false };
+      const state = { jobs: [], products: [], logs: [], searched: false, selectedJobs: new Set(), logsCollapsed: false, justAddedJobId: null };
+      let justAddedTimer = null;
+
+      function flyToQueue(sourceEl) {
+        const queueCard = document.querySelector('.queue-card');
+        if (!queueCard || !sourceEl.animate) return;
+        const startRect = sourceEl.getBoundingClientRect();
+        const endRect = queueCard.getBoundingClientRect();
+
+        const dot = document.createElement('div');
+        dot.className = 'fly-dot';
+        const startX = startRect.left + startRect.width / 2 - 7;
+        const startY = startRect.top + startRect.height / 2 - 7;
+        dot.style.left = `${startX}px`;
+        dot.style.top = `${startY}px`;
+        document.body.appendChild(dot);
+
+        const dx = (endRect.left + 36) - (startRect.left + startRect.width / 2);
+        const dy = (endRect.top + 24) - (startRect.top + startRect.height / 2);
+
+        const anim = dot.animate([
+          { transform: 'translate(0px, 0px) scale(1)', opacity: 1 },
+          { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 50}px) scale(0.75)`, opacity: 1, offset: 0.55 },
+          { transform: `translate(${dx}px, ${dy}px) scale(0.15)`, opacity: 0 }
+        ], { duration: 600, easing: 'cubic-bezier(.32,.64,.35,1)' });
+
+        anim.onfinish = () => {
+          dot.remove();
+          queueCard.classList.add('pulse');
+          setTimeout(() => queueCard.classList.remove('pulse'), 550);
+        };
+      }
 
       function getKstDateString(date) {
         const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
@@ -297,7 +340,7 @@
             <td>
               <div class="row-actions">
                 <button type="button" class="ghost" onclick="reprintLog('${log.id}')">재출력</button>
-                <button type="button" class="ghost" onclick="deleteLog('${log.id}')">×</button>
+                <button type="button" class="ghost" onclick="deleteLog('${log.id}', this)">×</button>
               </div>
             </td>
           </tr>
@@ -334,7 +377,15 @@
         }
       };
 
-      window.deleteLog = async function(logId) {
+      window.deleteLog = async function(logId, buttonEl) {
+        const row = buttonEl ? buttonEl.closest('tr') : null;
+        if (row && row.animate) {
+          const anim = row.animate(
+            [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.96)' }],
+            { duration: 240, easing: 'ease-in', fill: 'forwards' }
+          );
+          await anim.finished.catch(() => {});
+        }
         await fetch(`/api/logs?id=${encodeURIComponent(logId)}`, { method: 'DELETE' });
         state.logs = state.logs.filter((item) => item.id !== logId);
         renderLogs();
@@ -355,8 +406,9 @@
 
         const rows = state.jobs.map((job) => {
           const isSelected = state.selectedJobs.has(job.id);
+          const isJustAdded = job.id === state.justAddedJobId;
           return `
-          <tr style="background:${isSelected ? 'var(--ozkiz-pink-soft)' : 'transparent'};">
+          <tr class="${isJustAdded ? 'just-added' : ''}" style="background:${isSelected ? 'var(--ozkiz-pink-soft)' : 'transparent'};">
             <td><input type="checkbox" data-job-id="${job.id}" ${isSelected ? 'checked' : ''} /></td>
             <td class="name-cell nowrap">${job.barcode}</td>
             <td class="small wrap">${job.note || '-'}${job.option ? ` · ${job.option}` : ''}</td>
@@ -409,7 +461,7 @@
         }
 
         const rows = state.products.map((product, index) => `
-          <tr>
+          <tr style="animation-delay:${Math.min(index, 20) * 22}ms;">
             <td class="name-cell">${product.name}</td>
             <td class="small wrap">${product.sku || '-'} · ${product.option || '-'}</td>
             <td class="small">${product.barcode || '바코드 없음'}</td>
@@ -477,7 +529,10 @@
           state.jobs.unshift(job);
         }
         searchMessage.textContent = `${product.name}이 대기열에 추가되었습니다.`;
+        state.justAddedJobId = job.id;
         renderJobs();
+        clearTimeout(justAddedTimer);
+        justAddedTimer = setTimeout(() => { state.justAddedJobId = null; }, 900);
       }
 
       let cachedVoices = [];
@@ -902,6 +957,7 @@
         if (button.getAttribute('data-action') === 'print') {
           await printProductNow(product);
         } else {
+          flyToQueue(button);
           await addProductToQueue(product);
         }
       });

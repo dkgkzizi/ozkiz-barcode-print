@@ -46,7 +46,12 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    await withClient((client) => client.query('DELETE FROM public.print_logs'));
+    const id = String(req.query.id || '');
+    if (id) {
+      await withClient((client) => client.query('DELETE FROM public.print_logs WHERE id = $1', [id]));
+    } else {
+      await withClient((client) => client.query('DELETE FROM public.print_logs'));
+    }
     res.status(200).json({ ok: true });
     return;
   }

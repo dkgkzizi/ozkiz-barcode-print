@@ -297,6 +297,7 @@
             <td>
               <div class="row-actions">
                 <button type="button" class="ghost" onclick="reprintLog('${log.id}')">재출력</button>
+                <button type="button" class="ghost" onclick="deleteLog('${log.id}')">×</button>
               </div>
             </td>
           </tr>
@@ -331,6 +332,12 @@
           log.printCount = data.printCount;
           renderLogs();
         }
+      };
+
+      window.deleteLog = async function(logId) {
+        await fetch(`/api/logs?id=${encodeURIComponent(logId)}`, { method: 'DELETE' });
+        state.logs = state.logs.filter((item) => item.id !== logId);
+        renderLogs();
       };
 
       function statusLabel(status) {

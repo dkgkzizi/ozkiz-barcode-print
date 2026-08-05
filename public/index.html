@@ -366,6 +366,7 @@
         const printWindow = window.open('', '_blank', 'width=960,height=680');
         printWindow.document.write(buildLabelHtml(job));
         printWindow.document.close();
+        printWindow.onafterprint = () => printWindow.close();
         setTimeout(() => { printWindow.print(); }, 400);
 
         const response = await fetch('/api/logs', {
@@ -892,6 +893,7 @@
         const printWindow = window.open('', '_blank', 'width=960,height=680');
         printWindow.document.write(buildLabelHtml(job, product));
         printWindow.document.close();
+        printWindow.onafterprint = () => printWindow.close();
         setTimeout(() => { printWindow.print(); }, 400);
         await fetch(`/api/jobs/${job.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'printed' }) });
       }
@@ -918,6 +920,7 @@
         const printWindow = window.open('', '_blank', 'width=960,height=680');
         printWindow.document.write(buildBatchLabelHtml(items));
         printWindow.document.close();
+        printWindow.onafterprint = () => printWindow.close();
         setTimeout(() => { printWindow.print(); }, 400);
 
         await Promise.all(jobsToPrint.map((job) =>
